@@ -2,26 +2,158 @@
 <Video>:
     text:'Video'
 
+
 <Telemetry>:
     id:layout2
-    rows: 4
+    rows: 3
+    cols:3
+    font_size: '50sp'
+
     Label:
-        id:telemetry1
-        text:'Telemetry'
+        text:'Altitude: '
+        halign: 'right'
+        text_size: self.size
+        valign: 'middle'
+        font_size: '25sp'
     Label:
-        id:telemetry2
+        id:alt
         text:'Telemetry'
+        halign: 'right'
+        valign: 'middle'
+        text_size: self.size
+        font_size: '25sp'
     Label:
-        id:telemetry3
-        text:'Telemetry'
+        text:' ft'
+        halign: 'left'
+        text_size: self.size
+        valign: 'middle'
+        font_size: '25sp'
+
     Label:
-        id:telemetry4
+        text:'Position: '
+        halign: 'right'
+        text_size: self.size
+        valign: 'middle'
+        font_size: '25sp'
+    Label:
+        id:pos
         text:'Telemetry'
+        halign: 'right'
+        text_size: self.size
+        valign: 'middle'
+        font_size: '25sp'
+    Label:
+        text:' ft'
+        halign:'left'
+        text_size: self.size
+        valign: 'middle'
+        font_size: '25sp'
+    Label:
+        text:'Velocity: '
+        halign: 'right'
+        text_size: self.size
+        valign: 'middle'
+        font_size: '25sp'
+    Label:
+        id:vel
+        text:'Telemetry'
+        halign: 'right'
+        text_size: self.size
+        valign: 'middle'
+        font_size: '25sp'
+    Label:
+        halign:'left'
+        text:' ft/s'
+        text_size: self.size
+        valign: 'middle'
+        font_size: '25sp'
 
 <Status>:
-    text:'Status'
+    cols:4
+    rows:6
+    Label:
+        text: ''
+    Label:
+        text:'IMU'
+        font_size: '25sp'
+    Label:
+        text:'GPS'
+        font_size: '25sp'
+    Label:
+        text:'ALT '
+        font_size: '25sp'
+    Label:
+        text:'Sensors:'
+        font_size: '25sp'
+    Label:
+        id:IMU
+        text:'OK'
+        font_size: '25sp'
+        color: 0,1,0,1
+    Label:
+        id:GPS
+        text:'OK'
+        font_size: '25sp'
+        color: 0,1,0,1
+    Label:
+        id:ALT
+        text:'OK'
+        font_size: '25sp'
+        color: 0,1,0,1
+    Label:
+        text: ''
+    Label:
+        text:'Teensy'
+        font_size: '25sp'
+    Label:
+        text:'Raspi'
+        font_size: '25sp'
+    Label:
+        text:''
+    Label:
+        text:'Processors:'
+        font_size: '25sp'
+    Label:
+        id:Teensy
+        text:'OK'
+        font_size: '25sp'
+        color: 0,1,0,1
+    Label:
+        id:Raspi
+        text:'OK'
+        font_size: '25sp'
+        color: 0,1,0,1
+    Label:
+        text:''
+    Label:
+        text: ''
+    Label:
+        text:'LTE'
+        font_size: '25sp'
+    Label:
+        text:'Serial'
+        font_size: '25sp'
+    Label:
+        text:''
+    Label:
+        text:'Comms:'
+        font_size: '25sp'
+    Label:
+        id:LTE
+        text:'OK'
+        font_size: '25sp'
+        color: 0,1,0,1
+    Label:
+        id:Serial
+        text:'OK'
+        font_size: '25sp'
+        color: 0,1,0,1
+    Label:
+        text:''
 
-<Screen>:
+
+<Seperator>:
+    id: friend
     Widget:
         id: separator
         size_hint_y: None
@@ -43,9 +175,4 @@
                 pos: root.width/2, 0
                 size: 7,root.height
 
-
-<MyGrid>:
-	rows: 2
-	cols: 2
-    size: root.width,root.height
 

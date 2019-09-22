@@ -21,64 +21,91 @@ class Video(Label):
 	pass
 
 class Telemetry(GridLayout):
-	def update(self, dt):
-		self.ids.telemetry1.text = 'telemetry1: ' + str(random.randint(0,200))
-		self.ids.telemetry2.text = 'telemetry2: ' + str(random.randint(0,200))
-		self.ids.telemetry3.text = 'telemetry3: ' + str(random.randint(0,200))
-		self.ids.telemetry4.text = 'telemetry4: ' + str(random.randint(0,200))
-	def on_touch_up(self, touch):
-		Clock.schedule_interval(self.update,0.5)
+	def update(self, alt, x, y, vel):
+		self.ids.alt.text = alt
+		self.ids.pos.text = x + ',' + y  
+		self.ids.vel.text = vel
 	pass
 
-class Status(Label):
+class Status(GridLayout):
+	def update(self, fIMU, fGPS, fALT, fTeensy, fRaspi, fLTE, fSerial):
+		self.ids.IMU.text = fIMU
+		self.ids.GPS.text = fGPS
+		self.ids.ALT.text = fALT
+		self.ids.Teensy.text = fTeensy
+		self.ids.Raspi.text = fRaspi
+		self.ids.LTE.text = fLTE
+		self.ids.Serial.text = fSerial
 	pass
 
-class Screen(FloatLayout):
+class Scran(FloatLayout):
+	pass
+class Seperator(FloatLayout):
 	pass
 
 class Plot(GridLayout): 
 	fig = plt.figure()
 	ax = fig.add_subplot(111, projection='3d')
-	(ox,oy,oz) = (0,0,0)
 	def addPlot(self):
-		self.ax.set_xlim3d([0.0, 10.0])
-		self.ax.set_ylim3d([0.0, 10.0])
-		self.ax.set_zlim3d([0.0, 10.0])
 		self.add_widget(self.fig.canvas)
 		return self
 
-	def animate(self, i):
-		input = open('location.txt','r').read()
-		x, y, z = input.split(',')
-		if (x,y,z) != (self.ox,self.oy,self.oz):
-			(self.ox, self.oy, self.oz) = (x,y,z)
-			self.ax.scatter(float(x),float(y),float(z), 'o', color='red')
-			self.fig.canvas.draw_idle()
-
-	def on_touch_up(self, touch):
-		Clock.schedule_interval(self.animate,0.5)
+	def update(self, x, y, z):
+		self.ax.scatter(float(x),float(y),float(z), 'o', color='red')
+		self.fig.canvas.draw_idle()
 
 
 	pass
 
 class MyGrid(GridLayout):
+	tel = None
+	plot = None
+	stat = None
+	(ox,oy,oz) = (0,0,0)
+
 	def build(self):
+		self.tel = Telemetry()
+		self.plot = Plot(cols = 1)
+		self.stat = Status()
 		self.add_widget(Video())
-		self.add_widget(Plot(cols = 1).addPlot())
-		self.add_widget(Telemetry())
-		self.add_widget(Status())
+		self.add_widget(self.plot.addPlot())
+		self.add_widget(self.tel)
+		self.add_widget(self.stat)
+
+
 		return self
 		
+	def update(self,i):
+
+		input = open('location.txt','r').read()
+		x, y, z = str(random.randint(0,200)), str(random.randint(0,200)), str(random.randint(0,200))
+		if (x,y,z) != (self.ox,self.oy,self.oz):
+			(self.ox, self.oy, self.oz) = (x,y,z)
+			self.plot.update(x, y, z)
+			
+		self.tel.update(x, y , z, z)
+		self.stat.update('bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad')
+
+
 	pass
 
-
 class MattApp(App):
-
+	grid = None
 	def build(self):
-		main = Screen()
-		grid = MyGrid(cols = 2, size = (main.height, main.width))
-		main.add_widget(grid.build())
-	
+		main = Scran()
+		self.grid = MyGrid(cols = 2, size = (main.height, main.width), id  = 'grid')
+		main.add_widget(self.grid.build())
+		main.add_widget(Seperator())
 		return main
+	def on_start(self):
+		Clock.schedule_interval(self.grid.update, .2)
+		#code here?
+
+
+
+
+
+
 
 MattApp().run()
+#wont go here
