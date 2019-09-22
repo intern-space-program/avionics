@@ -19,6 +19,10 @@
 #include <Adafruit_GPS.h>
 //_____________________________________________________________________________//
 
+//_______________________________Macros________________________________________//
+#define piSerial Serial
+#define GPSSerial Serial1
+//_____________________________________________________________________________//
 
 //___________________________Global Assignments_________________________________//
 // IMU variables
@@ -36,11 +40,12 @@ int packetNo = 0;
 bool BNO_CONNECTED;
 bool BMP_CONNECTED;
 bool GPS_CONNECTED;
+
 uint32_t timer = millis();
-#define piSerial Serial2  
+
 
 //GPS Assignments..........................
-#define GPSSerial Serial1
+
 Adafruit_GPS GPS(&GPSSerial);
 
 
@@ -56,12 +61,9 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55);
 //________________________________________________________________________________//
 
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////
 //.................................Void Setup.....................................//
 ////////////////////////////////////////////////////////////////////////////////////
-
 void setup(void) 
 {
   piSerial.begin(115200);
@@ -157,7 +159,7 @@ void setup(void)
     delay(1000);
   }
 //__________________________________Final Handshake Sequence______________________________// 
-
+/*
   for(int i = 0; i < 3; i++){
      piSerial.println("initialized");
   }
@@ -169,18 +171,18 @@ void setup(void)
         break;
     }
   }
- 
+ */
 } 
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-//.................................Void Loop.....................................//
+//.................................Void Loop......................................//
 ////////////////////////////////////////////////////////////////////////////////////
-
 void loop(void) {
 //_________________________________________________________________________//
 //_______________________________Sample GPS________________________________//
 //_________________________________________________________________________//
+  GPS.read();
   if (GPS.newNMEAreceived()) {
     // a tricky thing here is if we print the NMEA sentence, or data
     // we end up not listening and catching other sentences!
@@ -189,6 +191,7 @@ void loop(void) {
     if (!GPS.parse(GPS.lastNMEA())) // this also sets the newNMEAreceived() flag to false
       return; // we can fail to parse a sentence in which case we should just wait for another
   }
+<<<<<<< HEAD
 
   // if millis() or timer wraps around, we'll just reset it
   if (timer > millis()) 
@@ -253,6 +256,15 @@ void loop(void) {
       gps.add(GPS.latitudeDegrees);
       gps.add(GPS.longitudeDegrees);
       gps.add(GPS.altitude);
+
+    //__________Check Connections__________//
+      if ((gps[1] == 0) || (gps[0] ==0)) {
+        GPS_CONNECTED = true;
+      }
+
+      if ((tpa[2] < 0) || (tpa[2] > 3300)) {
+        BMP_CONNECTED = false;
+      }
 
     //______________Send Data______________//
       serializeJson(doc, piSerial);
