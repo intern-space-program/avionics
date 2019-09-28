@@ -1,8 +1,9 @@
 # TODO and Misc. Notes
 
 ## TODO
-- [ ] Create Quaternion tools
-- [ ] Create Vector tools
+- [X] Create Quaternion tools
+- [X] Create Vector tools
+- [ ] Convert Quaternion/Vector tools to C for faster computation
 
 ## Sensor Data
 
