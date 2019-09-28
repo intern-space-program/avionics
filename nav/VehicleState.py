@@ -41,9 +41,9 @@ class VehicleState:
             [0:3]  : vehicle position vector
             [4:6]  : vehicle velocity vector
             [7:10] : vehicle attitude quaternion '''
-        self.state_vector = concatenate([concatenate([self.r_body_in_inert,
-                                                      self.v_body_in_inert]),
-                                        self.q_inert_to_body])
+        self.state_vector = concatenate([self.r_body_in_inert,
+                                         self.v_body_in_inert,
+                                         self.q_inert_to_body])
 
     def get_update(self):
         '''
