@@ -1,9 +1,10 @@
 # TODO and Misc. Notes
 
 ## TODO
-- [X] Create Quaternion tools
-- [X] Create Vector tools
-- [ ] Convert Quaternion/Vector tools to C for faster computation
+- [X] VehicleState interface
+- [ ] Propagate position
+- [ ] Propagate velocity
+- [ ] Propagate attitude
 
 ## Sensor Data
 
