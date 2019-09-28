@@ -1,4 +1,4 @@
-from numpy import array
+from numpy import array, concatenate
 from numpy.linalg import norm
 
 
@@ -10,14 +10,12 @@ class VehicleState:
             - linear velocity
             - attitude
 
+        Default values are overwritten at startup.
+
         :param q_body_to_imu: The relative orientation of the IMU frame to
             the vehicle body frame.
         :type q_body_to_imu: `numpy.array`
         '''
-
-        self.q_body_to_imu = q_body_to_imu
-
-        # defaults to be overwritten on startup
 
         # scalars
         self.t_state = 0.0  # time of last known state
@@ -25,21 +23,33 @@ class VehicleState:
 
         # position vectors
         self.r_body_in_inert = array([0.0, 0.0, 1e-6])
-
-        # rate vectors
-        self.v_body_in_inert = array([0.0, 0.0, 0.0])
-
-        # quaternions
-        self.q_inert_to_body = array([0.0, 0.0, 0.0, 1.0])
-        self.q_inert_to_imu = array([0.0, 0.0, 0.0, 1.0])
-        self.w_imu_wrt_inert_in_imu = array([0.0, 0.0, 0.0])
-        self.a_imu_nc_wrt_inert_in_imu = array([0.0, 0.0, 0.0])
-        self.a_imu_wrt_inert_in_imu = array([0.0, 0.0, 0.0])
         self.r_earth_in_imu = array([0.0, 0.0, -1.0])
         self.r_magf_in_imu = array([1.0, 0.0, 0.0])
 
+        # rate vectors
+        self.v_body_in_inert = array([0.0, 0.0, 0.0])
+        self.a_imu_nc_wrt_inert_in_imu = array([0.0, 0.0, 0.0])
+        self.a_imu_wrt_inert_in_imu = array([0.0, 0.0, 0.0])
+        self.w_imu_wrt_inert_in_imu = array([0.0, 0.0, 0.0])
+
+        # quaternions
+        self.q_body_to_imu = q_body_to_imu
+        self.q_inert_to_body = array([0.0, 0.0, 0.0, 1.0])
+        self.q_inert_to_imu = array([0.0, 0.0, 0.0, 1.0])
+
+        ''' State Vector, `list`, all components resolved in inertial frame
+            [0:3]  : vehicle position vector
+            [4:6]  : vehicle velocity vector
+            [7:10] : vehicle attitude quaternion '''
+        self.state_vector = concatenate([concatenate([self.r_body_in_inert,
+                                                      self.v_body_in_inert]),
+                                        self.q_inert_to_body])
+
     def get_update(self):
-        pass
+        '''
+        Updates the vehicle's state based on the current measurements.
+        :return: self.state_vector
+        '''
 
     def set_measurements(self, measurements):
         '''
@@ -51,22 +61,26 @@ class VehicleState:
             2: `list`
             3: `float`
             4: `list`
+        :return: returns return of self.get_update()
         '''
         self.t_state = measurements[0]  # time of measurements
-        imu = measurements[1]           # imu measurements
-        gps = measurements[2]           # gps measurements
-        airspeed = measurements[3]      # pitot tube reading converted to airspeed
-        tp = measurements[4]            # temp./press. readings
+        imu = measurements[1]  # imu measurements
+        gps = measurements[2]  # gps measurements
+        airspeed = measurements[3]  # pitot tube reading converted to airspeed
+        tp = measurements[4]  # temp./press. readings
 
         self.parse_imu(imu)
         self.parse_gps(gps)
         self.airspeed = airspeed
         self.parse_tp(tp)
 
+        return self.get_update()
+
     def parse_imu(self, imu):
         '''
         Parses out the data measured by the IMU.
-        :param imu: List of values measured by the IMU.
+        :param imu: values measured by the IMU.
+        :type imu: `list`
         '''
 
         # imu attitude (scalar-last, unit, transform, right quaternion)
