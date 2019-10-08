@@ -14,9 +14,10 @@ remain in memory until shutdown.
 
 from numpy import array, concatenate
 from numpy.linalg import norm
+from nav.initialization import NavInit
 
 
-class VehicleState:
+class VehicleState(NavInit):
     def __init__(self, q_body_to_imu):
         '''
         The vehicle's state, incorporating:
@@ -30,26 +31,7 @@ class VehicleState:
             the vehicle body frame.
         :type q_body_to_imu: `numpy.array`
         '''
-
-        # scalars
-        self.t_state = 0.0  # time of last known state
-        self.airspeed = norm(self.v_body_in_inert)
-
-        # position vectors
-        self.r_body_in_inert = array([0.0, 0.0, 1e-6])
-        self.r_earth_in_imu = array([0.0, 0.0, -1.0])
-        self.r_magf_in_imu = array([1.0, 0.0, 0.0])
-
-        # rate vectors
-        self.v_body_in_inert = array([0.0, 0.0, 0.0])
-        self.a_imu_nc_wrt_inert_in_imu = array([0.0, 0.0, 0.0])
-        self.a_imu_wrt_inert_in_imu = array([0.0, 0.0, 0.0])
-        self.w_imu_wrt_inert_in_imu = array([0.0, 0.0, 0.0])
-
-        # quaternions
-        self.q_body_to_imu = q_body_to_imu
-        self.q_inert_to_body = array([0.0, 0.0, 0.0, 1.0])
-        self.q_inert_to_imu = array([0.0, 0.0, 0.0, 1.0])
+        super().__init__()
 
         ''' State Vector, `list`, all components resolved in inertial frame
             [0:3]  : vehicle position vector
