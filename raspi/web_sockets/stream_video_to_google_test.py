@@ -1,25 +1,23 @@
 # This script does the following:
-#	1) Record H264 Video using PiCam at a maximum bitrate of 300 kbps
+#	1) Record H264 Video using PiCam at a maximum bitrate of 100 kbps
 #	2) Stream video data to a local BytesIO object
-#	3) Send raw data over LTE
+#	3) Send raw data over LTE to google.com
 #	4) Store raw data to an onboard file
 #	5) Clears BytesIO object after network stream and file store
 #	6) Interrupts and ends recording after 'record_time' seconds
 
 # Author: Ronnie Ankner
-# Last Edited: 10/2/19
+# Last Edited: 10/9/19
 # Libraries
 #	-> picamera -> PiCamera: Enables pi cam interfacing and settings manipulation
 #	-> picamera -> CircularIO: Allows for a circular buffer (if we want one)
 #	-> threading: enables timer interrupt
 #	-> io -> BytesIO : local file-like object that camera streams to
 #	-> socket: allows for UDP socket and message sending
-#	-> Hologram.HologramCloud -> HologramCloud: LTE API to send data over an LTE network
 
 from picamera import PiCamera
 from picamera import CircularIO
 from io import BytesIO
-from Hologram.HologramCloud import HologramCloud
 import threading
 import socket
 import time
@@ -27,8 +25,6 @@ import os
 
 #======================= Global Variables and Objects =================
 #Global Variables
-lte = True
-wifi = not(lte)
 record_file = 'buffer_recording.h264' #on-board file video is stored to
 bitrate_max = 100000 # bits per second
 record_time = 8 # Time in seconds that the recording runs for
@@ -46,15 +42,34 @@ camera = PiCamera()
 camera.resolution = (320, 240)
 camera.framerate = frame_rate
 
-if lte:
-	#LTE Network Streaming
-	credentials = {'devicekey': '8K0Dyq*7'}
-	hologram = HologramCloud(credentials, network='cellular')
-if wifi:
-	#Wifi UDP Network Streaming
-	STREAM_IP = '127.0.0.1'
-	STREAM_PORT = 4000
-	send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#Network Setup
+tcp = True
+udp = not(tcp)
+if udp:
+	HOST_IP = '127.0.0.1'
+	PORT = 4000
+	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	print("UDP Socket Created")
+if tcp:
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	print("TCP Socket Created")
+
+	remote_host = 'google.com'
+	port = 80 #standard HTTP request port
+
+	try:
+		remote_ip = socket.gethostbyname(remote_host)
+	except socket.gaierror:
+		print("Host IP could not be acquired")
+		sys.exit()
+
+	print("Host IP address: %s"%(remote_ip))
+	connect_start = time.time()
+	sock.connect((remote_ip, port))
+	connect_time = time.time()-connect_start
+
+	print("Socket Connected to %s on port %d"%(remote_ip, port))
+	print("\tTime to Connect: %fs"%(connect_time))
 #========================= Functions =================================
 def interrupt_func():
 	#Interrupt function that ends camera streaming and program
@@ -69,12 +84,10 @@ def store_interrupt_func():
 	#threading.Timer(record_chunk, store_interrupt_func).start()
 
 def send_network(msg):
-	if lte:
-		#Sends data over LTE
-		msg_err = hologram.sendMessage(msg, timeout = 1)
-	if wifi:
-		#Sends data over Wifi UDP
-		send_sock.sendto(msg, (STREAM_IP, STREAM_PORT))
+	if tcp:
+		sock.sendall(msg)
+	if udp:
+		sock.sendto(msg,(HOST_IP, PORT))
 
 #======================== Video Streaming and Recording ============
 loop_cnt = 0.0
@@ -83,20 +96,6 @@ cnt = 0
 
 #=================== Stores to local BytesIO then sends========================
 #		    MOST EFFICENT AND TEST-PROVEN METHOD
-if lte:
-	#Initialize LTE Network Connection
-	connected = 0
-	while not(connected == 1):
-		os.system("sudo hologram network disconnect")
-		if connected == 0:
-			print("Not Connected (%d)\n -> Connecting"%(connected))
-			hologram.network.connect(timeout = 10)
-		else:
-			print("Trying to Reconnect (%d)"%(connected))
-			hologram.network.disconnect()
-			hologram.network.connect(timeout = 10)
-		connected  = hologram.network.getConnectionStatus()
-	print("Connected!")
 
 #Initialize local stream object
 stream = BytesIO()
@@ -108,7 +107,7 @@ camera_file_handle = open(record_file, 'wb+')
 #Begin Pi Cam recording
 camera.start_recording(stream, format='h264', bitrate=bitrate_max)
 
-print("Beginning Program")
+print("Beginning Send")
 #Start timer threads
 threading.Timer(record_time, interrupt_func).start()
 threading.Timer(record_chunk, store_interrupt_func).start()
@@ -130,11 +129,15 @@ while not(interrupt_bool):
 		
 		#Reset global interrupt flag
 		store_and_send_bool = False
+		
+		#Get Buffer Size:
+		buff_size = stream.getbuffer().nbytes
 
 		#Send bytes-like date over the Network (UDP)
 		comms_start = time.time()
 		send_network(stream.getvalue())
-		comms_sum += (time.time()-comms_start)		
+		comms_time = (time.time()-comms_start)
+		comms_sum += comms_time		
 		
 		#Store bytes-like data to file 
 		store_start = time.time()
@@ -148,6 +151,9 @@ while not(interrupt_bool):
 		#[Optional] Print Diagnostic printout
 		cnt+=1
 		print("Sent and Saved Chunk #%d | Loop Time: %f"%(cnt, (time.time()-loop_start)))
+		print("\tComms Time: %fs"%(comms_time))
+		print("\tData Size: %d Bytes | %d bits"%(buff_size, buff_size*8))
+		print("\tApparent Data Rate: %d kbps"%(float(buff_size*8)/(comms_time*1000)))
 		loop_sum+=(time.time() - loop_start)
 		
 #======================================================================================

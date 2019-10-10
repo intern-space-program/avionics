@@ -30,8 +30,8 @@ import time
 #Global Variables
 record_file = 'buffer_recording.h264' #on-board file video is stored to
 bitrate_max = 300000 # bits per second
-record_time = 8 # Time in seconds that the recording runs for
-record_chunk = 0.2 #chunk size in seconds video object is broken into and sent 
+record_time = 20 # Time in seconds that the recording runs for
+record_chunk = 0.1 #chunk size in seconds video object is broken into and sent 
 frame_rate = 20 #camera frame rate
 interrupt_bool = False #global interrupt flag that ends recording/program
 store_and_send_bool = False #global interrupt flag that initiates sending and storing of camera data
@@ -46,9 +46,13 @@ camera.resolution = (640, 480)
 camera.framerate = frame_rate
 
 #Network Streaming (REPLACE WITH LTE)
+#STREAM_IP = '98.195.152.175'
+tcp = True
+udp = not(tcp)
 STREAM_IP = '127.0.0.1'
 STREAM_PORT = 4000
 send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
 
 
 #========================= Functions =================================
@@ -144,8 +148,8 @@ while not(interrupt_bool):
 		stream.seek(0)
 
 		#[Optional] Print Diagnostic printout
-		#cnt+=1
-		#print("Sent and Saved Chunk #%d | Loop Time: %f"%(cnt, (time.time()-temp_start)))
+		cnt+=1
+		print("Sent and Saved Chunk #%d | Loop Time: %f"%(cnt, (time.time()-temp_start)))
 		time_sum+=(time.time() - temp_start)
 		
 #======================================================================================
