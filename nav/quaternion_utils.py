@@ -1,5 +1,5 @@
 '''
-File name: quaternion_toolbox.py
+File name: quaternion_utils.py
 Created by: Mike Bernard
 Creator email: mike.bernard@uconn.edu
 Creation date: 2019-09-28
