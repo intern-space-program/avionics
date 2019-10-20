@@ -2,9 +2,13 @@
 
 ## TODO
 - [X] VehicleState interface
-- [ ] Propagate position
-- [ ] Propagate velocity
-- [ ] Propagate attitude
+- [X] Propagate position
+- [X] Propagate velocity
+- [X] Propagate attitude
+- [ ] Filter propagated position
+- [ ] Filter propagated velocity
+- [ ] Filter propagated attitude
+- [ ] Fine-tune sensor fusion
 
 ## Sensor Data
 
