@@ -1,5 +1,5 @@
 '''
-File name: VehicleState.py
+File name: NavState.py
 Created by: Mike Bernard
 Creator email: mike.bernard@uconn.edu
 Creation date: 2019-09-28
@@ -7,29 +7,24 @@ Creation date: 2019-09-28
 Python version: 3.7.3
 
 Class containing interface between processor and
-vehicle state information. A VehicleState object
+vehicle state information. A NavState object
 should be instantiated at startup, and should
 remain in memory until shutdown.
 '''
 
 from numpy import array, concatenate
-from numpy.linalg import norm
-from nav.initialization import NavInit
+from nav.NavInit import NavInit
 
 
-class VehicleState(NavInit):
-    def __init__(self, q_body_to_imu):
+class NavState(NavInit):
+    def __init__(self):
         '''
         The vehicle's state, incorporating:
             - position
             - linear velocity
             - attitude
 
-        Default values are overwritten at startup.
-
-        :param q_body_to_imu: The relative orientation of the IMU frame to
-            the vehicle body frame.
-        :type q_body_to_imu: `numpy.array`
+        Default values from initialization are overwritten at startup.
         '''
         super().__init__()
 
@@ -46,6 +41,9 @@ class VehicleState(NavInit):
         Updates the vehicle's state based on the current measurements.
         :return: self.state_vector
         '''
+
+    def get_state(self):
+        return self.state_vector
 
     def set_measurements(self, measurements):
         '''
