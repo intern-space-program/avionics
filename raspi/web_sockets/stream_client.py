@@ -1,6 +1,10 @@
 import socket
 import sys
 import time
+#=============================================================================================
+#Command for live streaming with gstreamer
+#	gst-launch-1.0 -v tcpclientsrc port=4000 host=73.136.139.198 ! h264parse ! avdec_h264 ! videoconvert ! autovideosink
+#=============================================================================================
 
 SERVER_IP = '73.136.139.198'
 SERVER_PORT = 4000
@@ -25,5 +29,4 @@ while True:
 		video_handle.write(data)
 		packet_cnt += 1
 		print("Recieved Packet %d"%(packet_cnt))
-print("Closing Connection")
-sock.close()
+print("Exiting")
