@@ -5,12 +5,13 @@ import threading
 import socket
 import time
 import os
+import sys
 
 #======================= Global Variables and Objects =================
 #Global Variables
 record_file = 'buffer_recording.h264' #on-board file video is stored to
-bitrate_max = 100000 # bits per second
-record_time = 8 # Time in seconds that the recording runs for
+bitrate_max = 200000 # bits per second
+record_time = 20 # Time in seconds that the recording runs for
 record_chunk = 0.1 #chunk size in seconds video object is broken into and sent 
 frame_rate = 15 #camera frame rate
 interrupt_bool = False #global interrupt flag that ends recording/program
@@ -22,7 +23,7 @@ if record_chunk < 1/frame_rate:
 
 #Camera Settings
 camera = PiCamera()
-camera.resolution = (320, 240)
+camera.resolution = (640, 480)
 camera.framerate = frame_rate
 
 #Network Setup
@@ -34,7 +35,7 @@ print("Socket created")
 
 try:
 	sock.bind((HOST, PORT))
-except socket.error, msg:
+except socket.error:
 	print("Bind Failed. Exiting")
 	sys.exit()
 
@@ -52,8 +53,8 @@ def store_interrupt_func():
 	store_and_send_bool = True
 	#threading.Timer(record_chunk, store_interrupt_func).start()
 
-def send_network(msg):
-	sock.sendall(msg)
+def send_network(client_sock, msg):
+	client_sock.sendall(msg)
 
 #======================== Video Streaming and Recording ============
 loop_cnt = 0.0
@@ -109,7 +110,7 @@ while not(interrupt_bool):
 
 		#Send bytes-like date over the Network (UDP)
 		comms_start = time.time()
-		send_network(stream.getvalue())
+		send_network(conn, stream.getvalue())
 		comms_time = (time.time()-comms_start)
 		comms_sum += comms_time		
 		
