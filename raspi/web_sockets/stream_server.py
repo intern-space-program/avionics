@@ -95,6 +95,8 @@ comms_sum = 0
 store_sum = 0
 random_cnt = 0
 program_start = time.time()
+max_packet = 0
+max_comms = 0
 #Main Program Loop
 while not(interrupt_bool):
 	#camera.wait_recording(record_chunk)
@@ -132,6 +134,10 @@ while not(interrupt_bool):
 		print("\tComms Time: %fs"%(comms_time))
 		print("\tData Size: %d Bytes | %d bits"%(buff_size, buff_size*8))
 		print("\tApparent Data Rate: %d kbps"%(float(buff_size*8)/(comms_time*1000)))
+		if buff_size > max_packet:
+			max_packet = buff_size
+		if comms_time > max_comms:
+			max_comms = comms_time
 		loop_sum+=(time.time() - loop_start)
 		
 #======================================================================================
@@ -144,9 +150,10 @@ print("Ending Recording")
 camera.stop_recording()
 print("Closing Video File")
 camera_file_handle.close()
-print("Program Time: %fs"%(total_time))
-print("Process Time: %fs | Process Usage: %f%%"%(loop_sum, (loop_sum*100)/total_time))
+print("Program Time:  %fs"%(total_time))
+print("Process Time:  %fs | Process Usage: %f%%"%(loop_sum, (loop_sum*100)/total_time))
 print("\tComms: %fs | %f%%\n\tStore: %fs | %f%%"%(comms_sum, (comms_sum*100)/loop_sum, store_sum,(store_sum*100)/loop_sum))
+print("Stream Metrics:\n\tMax Packet Size: %d Bytes\n\tMax Send Time :  %fms"%(max_packet, max_comms*1000))
 
 
 #camera.stop_preview()
