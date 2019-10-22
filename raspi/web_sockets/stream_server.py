@@ -1,3 +1,6 @@
+#Client: COMPUTER
+#Server: RASPI
+
 from picamera import PiCamera
 from picamera import CircularIO
 from io import BytesIO
@@ -31,7 +34,7 @@ HOST = ''
 PORT = 4000
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print("Socket created")
+print("RASPI SERVER Socket created")
 
 try:
 	sock.bind((HOST, PORT))
@@ -39,7 +42,7 @@ except socket.error:
 	print("Bind Failed. Exiting")
 	sys.exit()
 
-print("Socket Binded")
+print("RASPI SERVER Socket Binded")
 #========================= Functions =================================
 def interrupt_func():
 	#Interrupt function that ends camera streaming and program
@@ -73,11 +76,11 @@ camera_file_handle = open(record_file, 'wb+')
 
 #Wait for connection to client
 sock.listen(3)
-print("Socket Listening for Connections")
+print("RASPI SERVER Listening for Connections")
 
 conn, addr = sock.accept() #this call blocks!
 
-print("Connected with %s:%d"%(addr[0],addr[1]))
+print("COMPUTER CLIENT Connected from %s:%d"%(addr[0],addr[1]))
 print("Beginning Stream!")
 
 #Begin Pi Cam recording
