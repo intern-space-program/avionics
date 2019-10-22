@@ -37,7 +37,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print("RASPI CLIENT Socket Created")
 
 sock.connect((SERVER_IP, SERVER_PORT))
-print("RASPI CLIENT Connected tO COMPUTER SERVER!\nWAITING FOR VIDEO")
+print("RASPI CLIENT Connected to COMPUTER SERVER!\nWAITING FOR VIDEO")
 #========================= Functions =================================
 def interrupt_func():
 	#Interrupt function that ends camera streaming and program
