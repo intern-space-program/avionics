@@ -101,7 +101,7 @@ while not(interrupt_bool):
 
 		#Send bytes-like date over the Network (UDP)
 		comms_start = time.time()
-		send_network(conn, stream.getvalue())
+		send_network(sock, stream.getvalue())
 		comms_time = (time.time()-comms_start)
 		comms_sum += comms_time		
 		

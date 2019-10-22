@@ -13,7 +13,7 @@ HOST = ''
 PORT = 5000
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print("Socket created")
+print("COMPUTER SERVER Socket created")
 
 try:
 	sock.bind((HOST, PORT))
