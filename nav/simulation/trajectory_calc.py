@@ -222,11 +222,5 @@ print("Simulation Ended")
 test_rocket.print_flight_metrics()
 print("PROGRAM TIME: %f s"%(time.time()-start_time))
 
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-ax.scatter(list_x, list_y, list_z, c='r', marker='o')
-ax.set_xlabel('X (m)')
-ax.set_ylabel('Y (m)')
-ax.set_zlabel('Z (m)')
-plt.show()
+
 
