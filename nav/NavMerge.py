@@ -69,6 +69,10 @@ class NavMerge:
         return num/denom
 
     def merge_position(self):
+        '''
+        Merges the propagated previous position, the new GPS
+        position, and the altitude sensor measurements.
+        '''
         p_prev = self.prev_state['position']
         v_prev = self.prev_state['velocity']
         std_alt = self.sigmas['altitude']
@@ -96,6 +100,10 @@ class NavMerge:
         return v_new
 
     def merge_velocity(self):
+        '''
+        Merges the integrated IMU acceleration and the airspeed
+        sensor velocity measurements into a less-errorful value.
+        '''
         v_new_i = self.integrate_imu_linear()
         std_imu = self.sigmas['IMU']
         std_airspeed = self.sigmas['airspeed']
@@ -106,6 +114,11 @@ class NavMerge:
         return v_new_mag_est * v_new_i / v_new_mag
 
     def merged_accel(self):
+        '''
+        Merges the IMU's conservative acceleration measurement with
+        a calculated conservative acceleration based on the IMU's
+        non-conservative measurement and gravity.
+        '''
         p_prev = self.prev_state['position']
 
         if norm(p_prev) != 0:
@@ -117,6 +130,10 @@ class NavMerge:
         return a_1_avg
 
     def attitude(self):
+        '''
+        Propagates the attitude based on the delta-angle change
+        measured by the IMU. Assumes small angles only.
+        '''
         q_inert_to_body_prev = self.prev_state['attitude']
         dq_inert_to_body = norm(concatenate([np.array([1]), 0.5*self.delta_theta]))
         q_inert_to_body_new_calc = qcomp(q_inert_to_body_prev, dq_inert_to_body)
