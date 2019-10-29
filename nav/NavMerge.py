@@ -47,6 +47,61 @@ class NavMerge:
 
         self.accel_merged = self.merged_accel()
 
+        self.merged_vals = {
+            'position': self.merge_position(),
+            'velocity': self.merge_velocity(),
+            'attitude': self.attitude()
+        }
+
+    @staticmethod
+    def weighted_avg(values, weights):
+        '''
+        Takes a list of values and a list of weights associated
+        with those values (index-to-index) and returns a weighted
+        averaged of those values as a float.
+        '''
+        denom = sum([1/w**2 for w in weights])
+        num = sum([1/w**2 * v for v, w in zip(values, weights)])
+
+        return num/denom
+
+    def merge_position(self):
+        p_prev = self.prev_state['position']
+        v_prev = self.prev_state['velocity']
+        std_alt = self.sigmas['altitude']
+        std_gps = self.sigmas['gps']
+
+        p_new_calc = p_prev + v_prev*self.dt + 0.5*self.accel_merged*dt**2
+        p_new_gps = self.gps
+        z_new = self.altitude
+
+        z_merged = self.weighted_avg([z_new, self.gps[2]],
+                                     [std_alt, std_gps])
+
+        p_new_est = np.array([p_new_gps[0], p_new_gps[1], z_merged])
+
+        return 0.5*(p_new_calc + p_new_est)
+
+    def integrate_imu_linear(self):
+        '''
+        Integrate IMU linear acceleration into linear velocity.
+        :return: `numpy.array` of new velocity
+        '''
+        v_prev = self.prev_state['velocity']
+        v_new = v_prev + self.accel_merged*self.dt
+
+        return v_new
+
+    def merge_velocity(self):
+        v_new_i = self.integrate_imu_linear()
+        std_imu = self.sigmas['IMU']
+        std_airspeed = self.sigmas['airspeed']
+        v_new_mag = norm(v_new_i)
+        v_new_mag_est = self.weighted_avg([v_new_mag, self.airspeed],
+                                          [std_imu, std_airspeed])
+
+        return v_new_mag_est * v_new_i / v_new_mag
+
     def merge_z_terms(self):
         pass
 
@@ -61,44 +116,8 @@ class NavMerge:
 
         return a_1_avg
 
-    def integrate_imu_linear(self):
-        '''
-        Integrate IMU linear acceleration into linear velocity.
-
-        :return: `numpy.array` of new velocity
-        '''
-        v_prev = self.prev_state['velocity']
-        v_new = v_prev + self.accel_merged*self.dt
-
-        return v_new
-
     def merge_airspeed_and_zdot(self):
         pass
-
-    def merge_position_terms(self):
-        pass
-
-    @staticmethod
-    def weighted_avg(values, weights):
-        '''
-        Takes a list of values and a list of weights associated
-        with those values (index-to-index) and returns a weighted
-        averaged of those values as a float.
-        '''
-        denom = sum([1/w**2 for w in weights])
-        num = sum([1/w**2 * v for v, w in zip(values, weights)])
-
-        return num/denom
-
-    def merge_velocity_terms(self):
-        v_new_i = self.integrate_imu_linear()
-        std_imu = self.sigmas['IMU']
-        std_airspeed = self.sigmas['airspeed']
-        v_new_mag = norm(v_new_i)
-        v_new_mag_est = self.weighted_avg([v_new_mag, self.airspeed],
-                                          [std_imu, std_airspeed])
-
-        return v_new_mag_est * v_new_i / v_new_mag
 
     def merge_attitude_quaternions(self):
         pass
