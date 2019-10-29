@@ -121,6 +121,6 @@ class NavMerge:
         dq_inert_to_body = norm(concatenate([np.array([1]), 0.5*self.delta_theta]))
         q_inert_to_body_new_calc = qcomp(q_inert_to_body_prev, dq_inert_to_body)
 
-        q_inert_to_body_new = 0.5*(self.q_inert_to_body, q_inert_to_body_new_calc)
+        q_inert_to_body_new = 0.5*(self.q_inert_to_body + q_inert_to_body_new_calc)
 
         return q_inert_to_body_new
