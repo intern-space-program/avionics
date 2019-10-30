@@ -9,6 +9,28 @@ from nav.quaternion_utils import *
 from nav.constants import *
 
 
+def decoded_data_to_merge_inputs(prev_state, decoded_data):
+    '''
+    Converts decoded sensor data into a list of
+    values used to init a NavMerge object.
+    :param prev_state: `dict` the last known nav state
+    :param decoded_data: `dict` of decoded sensor measurements
+    :return: `list` of data corresponding to arguments of NavMerge
+    '''
+    return [
+        prev_state,
+        decoded_data['dt'],
+        decoded_data['airspeed'],
+        decoded_data['altitude'],
+        decoded_data['gps'],
+        decoded_data['delta_theta'],
+        decoded_data['attitude'],
+        decoded_data['accel_nc'],
+        decoded_data['accel'],
+        decoded_data['sigmas']
+    ]
+
+
 class NavMerge:
     def __init__(self, prev_state, dt=0, airspeed=None, altitude=None, gps=None,
                  delta_theta=None, q_inert_to_body=None, accel_nc=None, accel=None, sigmas=None):
@@ -51,6 +73,7 @@ class NavMerge:
         self.accel_merged = self.merged_accel()
 
         self.merged_vals = {
+            'time': self.prev_state['time'] + self.dt,
             'position': self.merge_position(),
             'velocity': self.merge_velocity(),
             'attitude': self.attitude()
