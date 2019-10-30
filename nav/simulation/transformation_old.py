@@ -12,69 +12,84 @@ PI = 3.1415926535
 
 def roll(angle):
 	print("ROLL %.2f degrees"%(angle*180/PI))
-	trans = np.array([[1, 0, 0],[0,cos(angle),-sin(angle)],[0,sin(angle),cos(angle)]])
-	print(trans)
+	trans = np.zeros((3,3))
+	
+	trans[X, X] = 1
+	trans[X, Y] = 0
+	trans[X, Z] = 0
+
+	trans[Y, X] = 0
+	trans[Y, Y] = cos(angle)
+	trans[Y, Z] = sin(angle)
+
+	trans[Z, X] = 0
+	trans[Z, Y] = -sin(angle)
+	trans[Z, Z] = cos(angle)
+
 	return trans
 
 def pitch(angle):
 	print("PITCH %.2f degrees"%(angle*180/PI))	
-	trans = np.array([[cos(angle), 0, sin(angle)],[0,1,0],[-sin(angle),0,cos(angle)]])
-	print(trans)
+	
+	trans = np.zeros((3,3))
+	
+	trans[X, X] = cos(angle)
+	trans[X, Y] = 0
+	trans[X, Z] = -sin(angle)
+
+	trans[Y, X] = 0
+	trans[Y, Y] = 1
+	trans[Y, Z] = 0
+
+	trans[Z, X] = sin(angle)
+	trans[Z, Y] = 0
+	trans[Z, Z] = cos(angle)
+	
 	return trans
 
 def yaw(angle):
 	print("YAW %.2f degrees"%(angle*180/PI))	
-	trans = np.array([[cos(angle),-sin(angle), 0],[sin(angle),cos(angle),0],[0,0,1]])
-	print(trans)
-	return trans
-
-def clean_matrix(matrix_in):
-	mat_out = matrix_in
-	rows = np.size(matrix_in, 0)
-	cols = np.size(matrix_in, 1)
-
-	for r in range(0,rows):
-		for c in range(0,cols):
-			mat_out[r,c] = round(matrix_in[r,c], 3)
-	return mat_out 
-
-def rotate_around_normal(angle, normal_vec):
-	c = cos(angle)
-	s = sin(angle)
-	C = 1-c
 	
-	x = normal_vec[0]
-	y = normal_vec[1]
-	z = normal_vec[2]
+	trans = np.zeros((3,3))
 
-	row1 = [x*x*C+c, x*y*C-z*s, x*z*C+y*s]
-	row2 = [y*x*C+z*s, y*y*C+c, y*z*C-x*s]
-	row3 = [z*x*C-y*s, z*y*C+x*s, z*z*C+c]
+	trans[X, X] = cos(angle)
+	trans[X, Y] = sin(angle)
+	trans[X, Z] = 0
+
+	trans[Y, X] = -sin(angle)
+	trans[Y, Y] = cos(angle)
+	trans[Y, Z] = 0
+
+	trans[Z, X] = 0
+	trans[Z, Y] = 0
+	trans[Z, Z] = 1
 	
-	trans = np.array([row1, row2, row3])
-	print (clean_matrix(trans))
-	return trans
-def rotate(angle, ground_to_rocket):
-	trans = rotate_around_normal(angle, ground_to_rocket[:,Z])
 	return trans
 
-def theta(angle, ground_to_rocket):
+def rotate(angle):
+	print("ROTATE %.2f degrees"%(angle*180/PI))	
+	
+	trans = yaw(angle)
+	trans = trans.T
+	
+	return trans
+
+def theta(angle):
+	print("THETA %.2f degrees"%(angle*180/PI))	
+	
 	trans = yaw(angle)
 	return trans
 
-def phi(angle, ground_to_rocket):
-	a = ground_to_rocket[0,Y]
-	b = ground_to_rocket[1,Y]
-	if (abs(a) < 0.0000001 and abs(b) < 0.0000001):
-		norm = np.array([0,1,0])
-	else:
-		norm = np.array([a, b, 0]) #Rocket Z vector crossed with ground Z vector
-	norm = norm/np.linalg.norm(norm)
-	trans = rotate_around_normal(angle, norm)
+def phi(angle):
+	print("PHI %.2f degrees"%(angle*180/PI))	
+	
+	trans = pitch(angle)
+	trans = trans.T
+
 	return trans
-
+	
 #def calculate_rocket_angles(r_to_g_trans):
-
+	
 
 gravity = np.array([0,0,-1])
 gravity = gravity.T
@@ -91,7 +106,6 @@ rocket_to_ground = np.eye(3)
 
 rocket_angle_rate = np.array([0, -1, 1])
 while True:
-	print 
 	cmd = input("Enter the angle manipulation: ")
 	elements = cmd.split(" ")
 	action = elements[0]
@@ -100,11 +114,11 @@ while True:
 	transformation = np.eye(3)
 	good_cmd = True
 	if action == 'r':
-		transformation = rotate(angle, ground_to_rocket)
+		transformation = rotate(angle)
 	elif action == 't':
-		transformation = theta(angle, ground_to_rocket)
+		transformation = theta(angle)
 	elif action == 'p':
-		transformation = phi(angle, ground_to_rocket)
+		transformation = phi(angle)
 	else:
 		print("Bad command; Interpreted as:\n\tAction: %s\n\tAngle: %f"%(action, angle))
 		good_cmd = False
@@ -113,12 +127,12 @@ while True:
 		rocket_to_ground = np.dot(rocket_to_ground, transformation.T)
 		
 		print("Ground-to-Rocket Matrix (Z is direction of Rocket)")
-		print(clean_matrix(ground_to_rocket))
+		print(ground_to_rocket)
 		print("Rocket-to-Ground Matrix (Inverse to Rocket)")
-		print(clean_matrix(rocket_to_ground))
+		print(rocket_to_ground)
 		
 		print("G-R and R-G multiplied")
-		print(clean_matrix(np.dot(ground_to_rocket, rocket_to_ground)))
+		print(np.dot(ground_to_rocket, rocket_to_ground))
 
 		forces = np.array([0,0,0])
 		forces = forces.T
@@ -190,16 +204,3 @@ while True:
 		ax.set_ylim3d(-1.0, 1.0)
 		ax.set_zlim3d(-1.0, 1.0)
 		plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-	 
