@@ -1,3 +1,21 @@
+# This script does the following:
+#	1) Checks for and disconnects any existing PPP (cell connection) threads
+#	2) Begins a PPP session through a subprocess and manages the output
+#	3) If successful, it disables the wifi and ends 
+#	4) If unsuccessful, it will continue attempting to connect
+
+# Author: Ronnie Ankner
+# Last Edited: 11/1/19
+# Libraries
+#	-> os: run terminal commands from python script
+#	-> subprocess: used to run and monitor terminal commands from python
+#	-> sys: used to exit the program
+
+#Note: Yes, hologram provides a python SDK, but that code is only pyhton2.X compatible. this script allows to work with hologram tools in python3 
+
+
+
+
 import os
 import subprocess
 import sys

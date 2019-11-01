@@ -1,13 +1,10 @@
 # This script does the following:
-#	1) Record H264 Video using PiCam at a maximum bitrate of {bitrate_max} kbps
-#	2) Record video data to a local BytesIO object
-#	3) Send raw data over a TCP socket to a ground server
+#	1) Record H264 Video using PiCam at a maximum bitrate of 300 kbps
+#	2) Stream video data to a local BytesIO object
+#	3) Send raw data over a upd port to simulate LTE
 #	4) Store raw data to an onboard file
 #	5) Clears BytesIO object after network stream and file store
 #	6) Interrupts and ends recording after 'record_time' seconds
-
-#	Client: RASPI
-#	Server: COMPUTER
 
 # Author: Ronnie Ankner
 # Last Edited: 11/1/19
@@ -17,15 +14,13 @@
 #	-> threading: enables timer interrupt
 #	-> io -> BytesIO : local file-like object that camera streams to
 #	-> socket: allows for UDP socket and message sending
-#	-> time: used to measure timing aspects of the system
-#	-> os: runs terminal commands from python
-#	-> sys: used exclusively for exiting the program
 
 
 from picamera import PiCamera
 from picamera import CircularIO
 from io import BytesIO
 import threading
+import subprocess
 import socket
 import time
 import os
@@ -51,14 +46,55 @@ camera.resolution = (640, 480)
 camera.framerate = frame_rate
 
 #Network Setup
+#Connect LTE Network
+#Ouput messages
+not_connected_msg = "ERROR: Modem not detected"
+fail_msg = "Failed to start PPP"
+success_msg = "PPP session started"
+
+LTE_connected = False
+os.system("sudo hologram network disconnect -v")#make sure PPP connection does not exist
+while (not(LTE_connected)):
+	print("Running Hologram Connect")
+	#Begin a subprocess to start PPP connection and connect LTE network
+	LTE_connect = subprocess.Popen(['sudo', 'hologram', 'network', 'connect', '-v'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+	while True:
+		out, err = LTE_connect.communicate()
+		output = str(out + err)
+		if (out):
+			print("LTE OUTPUT: %s"%(str(out)))
+		if (err):
+			print("LTE ERROR: %s"%(str(err)))
+
+		if output.find(not_connected_msg) != -1 :
+			print("Modem Disconnected")
+			break
+		elif output.find(fail_msg) != -1 :
+			print("Connection Failed")
+			break
+		elif output.find(success_msg) != -1:
+			print("CONNECTION SUCCEEDED")
+			LTE_connected = True
+			break
+		elif (len(output) == 0):
+			print("Program Failed")
+			break
+		else:
+			print("Undetermined Error, Exiting")
+			sys.exit()
+
+#Once LTE is connected, 
+os.system("sudo ifconfig wlan0 down") #disable wifi
+
+#Connect to Server on Video and Telemetry Ports
 SERVER_IP = '73.136.139.198'
-SERVER_PORT = 5000
+SERVER_VIDEO_PORT = 5000
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print("RASPI CLIENT Socket Created")
+vid_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+print("RASPI CLIENT Video Socket Created")
 
-sock.connect((SERVER_IP, SERVER_PORT))
-print("RASPI CLIENT Connected to COMPUTER SERVER!\nWAITING FOR VIDEO")
+vid_sock.connect((SERVER_IP, SERVER_PORT))
+print("RASPI CLIENT Video Connected to COMPUTER SERVER!")
 #========================= Functions =================================
 def interrupt_func():
 	#Interrupt function that ends camera streaming and program
@@ -124,7 +160,7 @@ while not(interrupt_bool):
 
 		#Send bytes-like date over the Network (UDP)
 		comms_start = time.time()
-		send_network(sock, stream.getvalue())
+		send_network(vid_sock, stream.getvalue())
 		comms_time = (time.time()-comms_start)
 		comms_sum += comms_time		
 		
@@ -154,7 +190,7 @@ while not(interrupt_bool):
 #End Recording and Tidy Up
 total_time = time.time() - program_start 
 print("Closing Connection")
-sock.close()
+vid_sock.close()
 print("Ending Recording")
 camera.stop_recording()
 print("Closing Video File")
