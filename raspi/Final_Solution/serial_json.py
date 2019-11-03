@@ -7,10 +7,11 @@ from math import trunc
 import sys
 
 max_int = ( 1 << 32) - 1
-baudrate = 9600
+baudrate = 115200
 serial_port = "/dev/ttyACM0" #USB port
-serial_port = "/dev/ttyAMA0" #UART serial pins
-
+serial_port = "/dev/ttyAMA0" #UART serial pins PL011
+#serial_port = "/dev/ttyS0" #UART serial pins miniUART
+#Self-made converstion function; NOT NEEDED: usurped by struct library
 def decompose_into_bytes(dec_val):
 	base = 16777216
 	byte_list = []
@@ -36,12 +37,14 @@ def form_packet(JSON_obj):
 	all_data = [imu_data, gps_data, alt_data]
 
 	packet_bytes = bytearray([192, 222]) #0xC0DE in hex (BEGINNING OF PACKET)
-	packet_bytes += bytearray(decompose_into_bytes(packet_num))
-	packet_bytes += bytearray(decompose_into_bytes(time_stamp))
+	#packet_bytes += bytearray(decompose_into_bytes(packet_num))
+	#packet_bytes += bytearray(decompose_into_bytes(time_stamp))
+	packet_bytes += bytearray(struct.pack('>ii', packet_num, time_stamp))
 	for data_lists in all_data:
 		for data in data_lists:
-			packet_bytes += bytearray(struct.pack("f", data))
+			packet_bytes += bytearray(struct.pack(">f", data))
 	packet_bytes += bytearray([237, 12]) #0xED0C in hex (END OF PACKET)
+	
 	return packet_bytes
 
 def connect_to_teensy():
@@ -49,7 +52,7 @@ def connect_to_teensy():
 	connected = False
 	while (not(connected)):
 		try:
-			ser = serial.Serial(serial_port, baudrate, timeout = 0.2)
+			ser = serial.Serial(serial_port, baudrate)
 			print("Teensy Connected!")
 			connected = True
 		except:
@@ -68,17 +71,19 @@ telem_buff = BytesIO()
 
 sample_JSON= {"imu": [1.0, 0.5, 0.25, 0.125, 0.0625], "gps": [1.0, 34.6758, 78.99585], "alt": [1.0, 1029283]}
 sample_JSON_str = json.dumps(sample_JSON)
-
+ser.write(b'dump')
 while True:
+	#time.sleep(0.1)
 	try:
 		JSON_packet = ser.readline()
 	except:
 		print("Teensy Stream Interrupted")
-		ser.close()
-		ser = connect_to_teensy()
+		sys.exit()
 
-	print("New Packet: %s"%(JSON_packet))
 	if (len(JSON_packet)):
+		print("New Packet: %s"%(JSON_packet))
+		if (JSON_packet.find(b'key word') != -1):
+			ser.write(b'dump')
 		corrupt = False
 		try:
 			JSON_obj = json.loads(JSON_packet)
@@ -92,9 +97,15 @@ while True:
 				print("ERROR: dirty little packet ;)")
 			else:
 				#telem_buff.write(packet_Bytes)
-				packet_cnt += 1
 				print("Current Packet | Size(%d):"%(len(packet_Bytes)))
 				print(packet_Bytes)
+				start = packet_Bytes.find(bytearray([192,222]))
+				end = packet_Bytes.find(bytearray([237,12]))
+				if (start != -1):
+					print("PACKET BEGINNING FOUND at position %d"%(start))
+					print(start)
+				if (end != -1):
+					print("PACKET END FOUND at position %d"%(end))
 				#print("Buffer | Size(%d):"%(telem_buff.getbuffer().nbytes))
 				#print(buff.getvalue())
 				print("\n\n")
