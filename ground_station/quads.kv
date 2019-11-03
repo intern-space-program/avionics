@@ -1,0 +1,39 @@
+#:kivy 1.0
+<Quad>:
+    Widget:
+        id: separator
+        size_hint_y: None
+        height: root.height
+        canvas:
+            Color:
+                rgb: 1., 0., 0.
+            Rectangle:
+                pos: 0, separator.center_y
+                size: root.width, 7   
+    Widget:
+        id: separator
+        size_hint_y: None
+        height: root.height
+        canvas:
+            Color:
+                rgb: 1., 0., 0.
+            Rectangle:
+                pos: root.width/2, 0
+                size: 7,root.height
+    GridLayout:
+        id:layout
+        rows: 2
+        cols: 2
+        size: root.width,root.height
+
+        Label:
+            text:'Video'
+        BoxLayout:
+            size_hint: [1, .8]
+            Label:
+                id:plot
+                text:'Trajectory plot'
+        Label:
+            text:'Telemetry'
+        Label:
+            text:'Status'
