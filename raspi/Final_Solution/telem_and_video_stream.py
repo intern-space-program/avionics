@@ -69,11 +69,32 @@ print("RASPI CLIENT VIDEO Socket Created")
 telem_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print("RASPI CLIENT TELEMTRY Socket Created")
 
-vid_sock.connect((SERVER_IP, SERVER_VIDEO_PORT))
-print("RASPI CLIENT VIDEO Connected to COMPUTER SERVER!")
-telem_sock.connect((SERVER_IP, SERVER_TELEM_PORT))
-print("RASPI CLIENT TELEMTRY Connected to COMPUTER SERVER!")
-
+connected = [False, False]
+connect_cnt = 0
+while connect_cnt < 5:
+	print("VIDEO connection attempt #%d"%(connect_cnt+1))
+	try:
+		vid_sock.connect((SERVER_IP, SERVER_VIDEO_PORT))
+		print("RASPI CLIENT VIDEO Connected to COMPUTER SERVER!")
+		connected[0] = True
+		break
+	except:
+		connect_cnt += 1
+		time.sleep(0.5)
+connect_cnt = 0
+while connect_cnt < 5:
+	print("TELEMETRY connection attempt #%d"%(connect_cnt+1))
+	try:
+		telem_sock.connect((SERVER_IP, SERVER_TELEM_PORT))
+		print("RASPI CLIENT TELEMTRY Connected to COMPUTER SERVER!")
+		connected[1] = True
+		break
+	except:
+		connect_cnt += 1
+		time.sleep(0.5)
+if (not(connected[0]) or not(connected[1])):
+	print("One or more socket connections failed, Exiting")
+	sys.exit()
 #========================= Functions =================================
 def interrupt_func():
 	#Interrupt function that ends camera streaming and program
@@ -120,6 +141,7 @@ def connect_to_teensy():
 			ser = serial.Serial(serial_port, baudrate)
 			print("Teensy Connected!")
 			connected = True
+			return ser
 		except:
 			connect_cnt += 1 
 			print("Trying to Connect: Attempt #%d"%(connect_cnt))
@@ -141,7 +163,7 @@ telem_buff = BytesIO()
 
 #Open and/or create onboard files to store video and telemetry
 camera_file_handle = open(vid_record_file, 'wb+')
-telem_file_handle = open(telem_reord_file, 'wb+')
+telem_file_handle = open(telem_record_file, 'wb+')
 
 #Connect to Teensy
 ser = connect_to_teensy()
@@ -195,8 +217,8 @@ while not(interrupt_bool):
 				packet_size = len(packet_Bytes)
 				print("Current Packet | Size(%d):"%(packet_size))
 				#print(packet_Bytes)
-				telem_buff.write(packetBytes)
-				telem_buff_size = telem_buff.getbuffer().nbytes()
+				telem_buff.write(packet_Bytes)
+				telem_buff_size = telem_buff.getbuffer().nbytes
 				print("Buffer | Size(%d):"%(telem_buff_size))
 				if (telem_buff_size/packet_size >= 10):
 					#Buffer Contains 10 telem Packets; store send and clear buffer
@@ -211,7 +233,6 @@ while not(interrupt_bool):
 					telem_buff.truncate(0)
 					telem_buff.seek(0)
 					print("Send and Saved %d Telemtry Bytes"%(telem_buff_size))
-		print("========================= TELEMETRY ============================")
 	
 	#Camera Store and Send
 	if (store_and_send_bool):
@@ -251,10 +272,9 @@ while not(interrupt_bool):
 		#print("\tApparent Data Rate: %d kbps"%(float(buff_size*8)/(vid_comms_time*1000)))
 		if buff_size > vid_max_packet:
 			vid_max_packet = buff_size
-		if vid_comms_time > vid_max_comms:
-			vid_max_comms = vid_comms_time
+		if comms_time > vid_max_comms:
+			vid_max_comms = comms_time
 		vid_loop_sum+=(time.time() - loop_start)
-		print("========================= CAMERA ============================")
 #======================================================================================
 
 #End Recording and Tidy Up
