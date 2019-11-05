@@ -9,6 +9,8 @@ SERVER_TELEM_PORT = 5001
 video_ports = [SERVER_VID_PORT]
 telem_ports = [SERVER_TELEM_PORT]
 
+stream_status = [1,1] #video, telemetry
+
 def name_source(socket_obj):
 	port = socket_obj.getsockname()[1]
 	named = False
@@ -61,7 +63,13 @@ telem_file = 'telemetry_stream.txt'
 video_handle = open(video_file, 'wb')
 telem_handle = open(telem_file, 'wb')
 
-while True:
+vid_packet_cnt = 0
+telem_packet_cnt = 0
+
+vid_total_bytes = 0
+telem_total_bytes = 0
+
+while stream_status[0] or stream_status[1]:
 	events = sel.select(timeout=None)#BLOCKING, can set timeout to not block
 	for key, mask in events:
 		if key.data is None:
@@ -75,14 +83,21 @@ while True:
 				#Empty Data
 				#Socket Connection was broken
 				print("%s Stream BROKEN; Closing Connection"%(name_source(socket_obj)))
+				if (name_source(socket_obj) == 'VIDEO'):
+					stream_status[0] = 0
+				if (name_source(socket_obj) == 'TELEMETRY'):
+					stream_status[1] = 0
 				socket_obj.close()
 			else:
 				if name_source(key.fileobj) == 'VIDEO':
+					vid_packet_cnt += 1
+					print("VIDEO: Recieved packet #%d: %d Bytes"%(vid_packet_cnt, len(recv_data)))
+					vid_total_bytes += len(recv_data)
 					#Video Data is ready
 					vid_buffer.write(recv_data)
 					if (vid_buffer.getbuffer().nbytes() > 10000):
 						#Buffer reached thresholded size
-
+						print("VIDEO: Buffer reached capacity; storing and clearing")
 						#process data
 						#-> send to local udp port for display
 
@@ -95,10 +110,13 @@ while True:
 
 				if name_source(key.fileobj) == 'TELEMETRY':
 					#Telemetry data is ready
+					telem_packet_cnt += 1
+					print("TELEMETRY: Recieved packet #%d: %d Bytes"%(telem_packet_cnt, len(recv_data)))
+					telem_total_bytes += len(recv_data)
 					telem_buffer.write(recv_data)
 					if (telem_buffer.getbuffer().nbytes() > 10000):
 						#Buffer reached thresholded size
-
+						print("TELEMETRY: Buffer reached capacity; storing and clearing")
 						#process data
 						#-> parse telemetry function here
 
@@ -112,6 +130,9 @@ while True:
 				if not(name_source(key.fileobj):
 					#Stream unidentified
 					print("Conneciton Unidentified") 
+print("Stream Ended")
+print("Stream Statistics: \n\tVIDEO Bytes: %d\n\tTELEM Bytes: %d"%(vid_total_bytes, telem_total_bytes))
+
 
 video_handle.close()
 telem_handle.close()
