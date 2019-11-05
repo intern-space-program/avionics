@@ -38,7 +38,7 @@ import struct
 #Global Variables
 vid_record_file = 'buffer_recording.h264' #on-board file video is stored to
 bitrate_max = 200000 # bits per second
-record_time = 10 # Time in seconds that the recording runs for
+record_time = 10.1 # Time in seconds that the recording runs for
 record_chunk = 0.2 #chunk size in seconds video object is broken into and sent 
 frame_rate = 15 #camera frame rate
 interrupt_bool = False #global interrupt flag that ends recording/program
@@ -74,7 +74,7 @@ connect_cnt = 0
 while connect_cnt < 5:
 	print("VIDEO connection attempt #%d"%(connect_cnt+1))
 	try:
-		vid_sock.connect((SERVER_IP, SERVER_VIDEO_PORT))
+		vid_sock.connect_ex((SERVER_IP, SERVER_VIDEO_PORT))
 		print("RASPI CLIENT VIDEO Connected to COMPUTER SERVER!")
 		connected[0] = True
 		break
@@ -85,7 +85,7 @@ connect_cnt = 0
 while connect_cnt < 5:
 	print("TELEMETRY connection attempt #%d"%(connect_cnt+1))
 	try:
-		telem_sock.connect((SERVER_IP, SERVER_TELEM_PORT))
+		telem_sock.connect_ex((SERVER_IP, SERVER_TELEM_PORT))
 		print("RASPI CLIENT TELEMTRY Connected to COMPUTER SERVER!")
 		connected[1] = True
 		break
@@ -95,6 +95,7 @@ while connect_cnt < 5:
 if (not(connected[0]) or not(connected[1])):
 	print("One or more socket connections failed, Exiting")
 	sys.exit()
+
 #========================= Functions =================================
 def interrupt_func():
 	#Interrupt function that ends camera streaming and program
@@ -279,7 +280,7 @@ while not(interrupt_bool):
 
 #End Recording and Tidy Up
 total_time = time.time() - program_start 
-print("Closing Connection")
+print("\n\nClosing Connection")
 vid_sock.close()
 telem_sock.close()
 print("Disconnecting from Teensy")
