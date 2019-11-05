@@ -127,7 +127,7 @@ while stream_status[0] or stream_status[1]:
 						telem_buffer.truncate(0)
 						telem_buffer.seek(0)
 
-				if not(name_source(key.fileobj):
+				if not(name_source(key.fileobj)):
 					#Stream unidentified
 					print("Conneciton Unidentified") 
 print("Stream Ended")
