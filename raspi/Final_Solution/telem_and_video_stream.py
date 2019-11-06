@@ -55,18 +55,24 @@ serial_port = "/dev/ttyAMA0" #UART serial pins PL011
 #serial_port = "/dev/ttyS0" #UART serial pins miniUART
 
 #Camera Settings
-camera = PiCamera()
-camera.resolution = (640, 480)
-camera.framerate = frame_rate
+#camera = PiCamera()
+#camera.resolution = (640, 480)
+#camera.framerate = frame_rate
 
 #Network Setup
 SERVER_IP = '73.136.139.198'
+SERVER_IP6 = '2600:387:a:3::17'
 SERVER_VIDEO_PORT = 5000
 SERVER_TELEM_PORT = 5001
-
+"""
 vid_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print("RASPI CLIENT VIDEO Socket Created")
 telem_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+print("RASPI CLIENT TELEMTRY Socket Created")"""
+
+vid_sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM, 0)
+print("RASPI CLIENT VIDEO Socket Created")
+telem_sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM, 0)
 print("RASPI CLIENT TELEMTRY Socket Created")
 
 connected = [False, False]
@@ -74,7 +80,7 @@ connect_cnt = 0
 while connect_cnt < 5:
 	print("VIDEO connection attempt #%d"%(connect_cnt+1))
 	try:
-		vid_sock.connect_ex((SERVER_IP, SERVER_VIDEO_PORT))
+		vid_sock.connect_ex((SERVER_IP6, SERVER_VIDEO_PORT, 0, 0))
 		print("RASPI CLIENT VIDEO Connected to COMPUTER SERVER!")
 		connected[0] = True
 		break
@@ -85,7 +91,7 @@ connect_cnt = 0
 while connect_cnt < 5:
 	print("TELEMETRY connection attempt #%d"%(connect_cnt+1))
 	try:
-		telem_sock.connect_ex((SERVER_IP, SERVER_TELEM_PORT))
+		telem_sock.connect_ex((SERVER_IP6, SERVER_TELEM_PORT, 0, 0))
 		print("RASPI CLIENT TELEMTRY Connected to COMPUTER SERVER!")
 		connected[1] = True
 		break
@@ -95,7 +101,7 @@ while connect_cnt < 5:
 if (not(connected[0]) or not(connected[1])):
 	print("One or more socket connections failed, Exiting")
 	sys.exit()
-
+time.sleep(100)
 #========================= Functions =================================
 def interrupt_func():
 	#Interrupt function that ends camera streaming and program
