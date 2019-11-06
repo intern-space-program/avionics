@@ -215,6 +215,7 @@ void loop(void) {
     // Serial.print(GPS.longitudeDegrees);
     gps.add(GPS.latitudeDegrees);
     gps.add(GPS.longitudeDegrees);
+    gps.add(GPS.altitude);
 
     serializeJson(doc, piSerial);
     piSerial.println("");
