@@ -55,9 +55,9 @@ serial_port = "/dev/ttyAMA0" #UART serial pins PL011
 #serial_port = "/dev/ttyS0" #UART serial pins miniUART
 
 #Camera Settings
-camera = PiCamera()
-camera.resolution = (640, 480)
-camera.framerate = frame_rate
+#camera = PiCamera()
+#camera.resolution = (640, 480)
+#camera.framerate = frame_rate
 
 #Network Setup
 SERVER_IP = '73.136.139.198'
