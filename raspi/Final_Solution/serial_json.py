@@ -9,7 +9,7 @@ import sys
 max_int = ( 1 << 32) - 1
 baudrate = 115200
 serial_port = "/dev/ttyACM0" #USB port
-#serial_port = "/dev/ttyAMA0" #UART serial pins PL011
+serial_port = "/dev/ttyAMA0" #UART serial pins PL011
 #serial_port = "/dev/ttyS0" #UART serial pins miniUART
 #Self-made converstion function; NOT NEEDED: usurped by struct library
 def decompose_into_bytes(dec_val):
