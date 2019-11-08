@@ -3,6 +3,14 @@ import selectors
 from io import BytesIO
 import types
 import struct
+from pathlib import Path
+import os
+
+home = str(Path.home())
+print("Home Directory: %s"%(home))
+store_dir = home + "/rocket_data"
+cmd = "mkdir " + store_dir
+os.system(cmd)
 
 SERVER_IP = ''
 SERVER_VID_PORT = 5000
@@ -39,13 +47,13 @@ class data_point:
 		print("\tPacket Number: %d"%(self.packet_num))
 		print("\tTime Stamp: %d"%(self.time_stamp))
 		print("\t        IMU  GPS  ALT  Teensy  Raspi  LTE  Serial")
-		print("\tStatus:  %d   %d   %d    %d      %d    %d     %d"%(status[0], status[1], status[2], status[3], status[4], status[5], status[6]))
+		print("\tStatus:  %d   %d    %d      %d        %d       %d        %d"%(self.status[0], self.status[1], self.status[2], self.status[3], self.status[4], self.status[5], self.status[6]))
 		print("\t             X       Y       Z")
-		print("\tPosition:  %.2f    %.2f    %.2f"%(position[0], position[1], position[2]))
+		print("\tPosition:  %.2f    %.2f    %.2f"%(self.position[0], self.position[1], self.position[2]))
 		print("\t             X       Y       Z")
-		print("\tVelocity:  %.2f    %.2f    %.2f"%(velocity[0], velocity[1], velocity[2]))
+		print("\tVelocity:  %.2f    %.2f    %.2f"%(self.velocity[0], self.velocity[1], self.velocity[2]))
 		print("\t             X       Y       Z")
-		print("\tOrientat:  %.2f    %.2f    %.2f"%(orientation[0], orientation[1], orientation[2]))
+		print("\tOrientat:  %.2f    %.2f    %.2f"%(self.orientation[0], self.orientation[1], self.orientation[2]))
 
 class stream:
 	def __init__(self, name, server_socket, client_socket, store_file):
@@ -83,7 +91,7 @@ class stream:
 	def recv_new_packet(self):
 		packet = self.client_socket.recv(4096)
 		if (not(packet)):
-			print("%s: Stream ended, closing connection and file"%(self.name))
+			print("%s: Stream ended, storing, then closing connection and file"%(self.name))
 			self.alive = False
 			self.close()
 			return
@@ -94,29 +102,28 @@ class stream:
 		
 
 def parse_telemetry(telem_packets, data_point_buffer):
-	code_word = bytearray([192,222])
-	EOP = bytearray([237,12])
+	code_word = bytearray([192,222]) #0xC0DE (Beginning of Packet)
+	EOP = bytearray([237,12]) #0xED0C (End of Packet)
 	packet_list = telem_packets.split(code_word)
 	for packets in packet_list:
-		print packets
 		good_packet = False
 		try:
-			packet_num, time_stamp = struct.unpack('>ii',packets[0:8])
-			imu, gps, alt, teensy, raspi, LTE, serial = struck.unpack('>???????', packets[8:15])
-			posX, posY, posZ = struct.unpack('>fff', packets[15:27])
-			velX, velY, velZ = struct.unpack('>fff', packets[27:39])
-			roll, pitch, yaw = struct.unpack('>fff', packets[39:51])
+			data = struct.unpack('>ii???????fffffffffh', packets)
 			if packets[51:53] == EOP:
 				good_packet = True
+			else:
+				print("End of Packet check failed")
+				print("\tPacket End: %s"%(packets[51:53]))
+				print("\tEOP:        %s"%(EOP))
 		except:
-			print("Bad Packet!")
-			pass
+			print("BAD PACKET")
+
 		if (good_packet):
-			status_list = [imu, gps, alt, teensy, raspi, LTE, serial]
-			pos_list = [posX, posY, posZ]
-			vel_list = [velX, velY, velZ]
-			orient_list = [roll, pitch, yaw]
-			new_data = data_point(packet_num, time_stamp, status_list, pos_list, vel_list, orient_list)
+			status_list = [data[2], data[3], data[4], data[5], data[6], data[7], data[8]]
+			pos_list = [data[9], data[10], data[11]]
+			vel_list = [data[12], data[13], data[14]]
+			orient_list = [data[15], data[16], data[17]]
+			new_data = data_point(data[0], data[1], status_list, pos_list, vel_list, orient_list)
 			new_data.print_data_point()
 			data_point_buffer.append(new_data)
 	
@@ -138,8 +145,8 @@ sel = selectors.DefaultSelector()
 sel.register(server_vid_sock, selectors.EVENT_READ, data=None)
 sel.register(server_telem_sock, selectors.EVENT_READ, data=None)
 
-video_file = 'video_stream_recording.h264'
-telem_file = 'telemetry_stream.txt'
+video_file = store_dir + '/video_stream_recording.h264'
+telem_file = store_dir + '/telemetry_stream.txt'
 
 
 #Wait for Video connection (First one to Initiate)
@@ -193,7 +200,7 @@ while video_stream or telem_stream:
 
 			if (name_source(socket_obj) == 'TELEMETRY' and telem_stream):
 				telem_stream.recv_new_packet()
-				if telem_stream.get_buffer_size() > 2000:
+				if telem_stream.get_buffer_size() > 500:
 					#Buffer Reached Threshold
 	
 					#Process Buffer data

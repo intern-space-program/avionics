@@ -37,6 +37,15 @@ import sys
 import json
 import serial
 import struct
+from pathlib import Path
+
+home = str(Path.home())
+print("Home Directory: %s"%(home))
+store_dir = home + "/rocket_data"
+cmd = "mkdir " + store_dir
+os.system(cmd)
+
+
 #======================= TRAJECTORY SIMULATION CODE =================
 
 #============== MACROS ===============================
@@ -252,7 +261,8 @@ class rocket:
 
 #======================= Global Variables and Objects =================
 #Global Variables
-vid_record_file = 'buffer_recording.h264' #on-board file video is stored to
+vid_record_file = store_dir + '/buffer_recording.h264' #on-board file video is stored to
+telem_record_file = store_dir + '/telemtry_stream.txt'
 bitrate_max = 200000 # bits per second
 #record_time = 10.1 # Time in seconds that the recording runs for
 record_chunk = 0.2 #chunk size in seconds video object is broken into and sent 
@@ -263,8 +273,6 @@ store_and_send_bool = False #global interrupt flag that initiates sending and st
 #ensures chunk size is not smaller than one frame
 if record_chunk < 1/frame_rate:
 	record_chunk = 1/frame_rate
-
-telem_record_file = 'telemtry_stream.txt'
 
 #Camera Settings
 camera = PiCamera()
