@@ -98,6 +98,7 @@ def parse_telemetry(telem_packets, data_point_buffer):
 	EOP = bytearray([237,12])
 	packet_list = telem_packets.split(code_word)
 	for packets in packet_list:
+		print packets
 		good_packet = False
 		try:
 			packet_num, time_stamp = struct.unpack('>ii',packets[0:8])

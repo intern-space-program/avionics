@@ -25,6 +25,10 @@
 from picamera import PiCamera
 from picamera import CircularIO
 from io import BytesIO
+from math import sin
+from math import cos
+from math import sqrt
+import math
 import threading
 import socket
 import time
@@ -143,6 +147,7 @@ class rocket:
 		print("Angular:\n\tPhi:   %f | %f\n\tTheta: %f | %f"%(self.phi[ZEROTH_ORDER], (self.phi[ZEROTH_ORDER]*180/PI), self.theta[ZEROTH_ORDER], (self.theta[ZEROTH_ORDER]*180/PI)))
 
 	def print_flight_metrics(self):
+		print("=============Flight Statistics ============")
 		print("Max Height:              %f m"%(self.max_height))
 		print("Max Speed:               %f m/s"%(self.max_speed))
 		print("Max Velocity:            %f m/s"%(self.max_velocity))
@@ -160,11 +165,11 @@ class rocket:
 		time.sleep(5*self.model.time_step)
 	
 	def form_bin_packet(self):
-		if (int(self.overall_time*100)%10):
-			print("New Packet at time: %f"%(self.overall_time))
+		if (int(self.overall_time*100)%10 == 0):
+			print("New Packet at time: %f | %d"%(self.overall_time, int(self.overall_time*100)%10))
 			self.packet_cnt += 1
 			packet_bytes = bytearray([192, 222]) #0xC0DE in hex (BEGINNING OF PACKET)
-			packet_bytes += bytearray(struct.pack('>ii', self.packet_num, int(self.flight_time*100)))
+			packet_bytes += bytearray(struct.pack('>ii', self.packet_cnt, int(self.overall_time*100)))
 			packet_bytes += bytearray(struct.pack('>???????', 1,0,1,1,0,1,1))
 			packet_bytes += bytearray(struct.pack('>fff', self.position[0][0], self.position[0][1], self.position[0][2]))
 			packet_bytes += bytearray(struct.pack('>fff', self.position[1][0], self.position[1][1], self.position[1][2]))
@@ -249,7 +254,7 @@ class rocket:
 #Global Variables
 vid_record_file = 'buffer_recording.h264' #on-board file video is stored to
 bitrate_max = 200000 # bits per second
-record_time = 10.1 # Time in seconds that the recording runs for
+#record_time = 10.1 # Time in seconds that the recording runs for
 record_chunk = 0.2 #chunk size in seconds video object is broken into and sent 
 frame_rate = 15 #camera frame rate
 interrupt_bool = False #global interrupt flag that ends recording/program
@@ -260,12 +265,8 @@ if record_chunk < 1/frame_rate:
 	record_chunk = 1/frame_rate
 
 telem_record_file = 'telemtry_stream.txt'
-baudrate = 115200
-serial_port = "/dev/ttyACM0" #USB port
-serial_port = "/dev/ttyAMA0" #UART serial pins PL011
-#serial_port = "/dev/ttyS0" #UART serial pins miniUART
 
-Camera Settings
+#Camera Settings
 camera = PiCamera()
 camera.resolution = (640, 480)
 camera.framerate = frame_rate
@@ -306,7 +307,7 @@ while connect_cnt < 5:
 if (not(connected[0]) or not(connected[1])):
 	print("One or more socket connections failed, Exiting")
 	sys.exit()
-time.sleep(100)
+
 #========================= Functions =================================
 def interrupt_func():
 	#Interrupt function that ends camera streaming and program
@@ -350,11 +351,8 @@ vid_store_sum = 0
 vid_max_packet = 0
 vid_max_comms = 0
 
-#Send Key word to Teensy to start dump
-ser.write(b'dump')
-
 #Initiate Rocket Sim
-test_rocket = rocket(9.8, 0, 0.01, 0.0)
+test_rocket = rocket(9.8, 0, 0.05, 0.0)
 test_rocket.transpose_rocket_frame_to_ground_frame()
 
 #Start timer threads
@@ -370,8 +368,10 @@ while test_rocket:
 	else:
 		test_rocket.thrust = 0.0
 	test_rocket.update_state()
+
 	packet_Bytes = test_rocket.form_bin_packet()
 	if (packet_Bytes):
+		print("========================= Telemetry ============================")
 		packet_size = len(packet_Bytes)
 		print("Current Packet | Size(%d):"%(packet_size))
 		print(packet_Bytes)
@@ -441,8 +441,6 @@ total_time = time.time() - program_start
 print("\n\nClosing Connection")
 vid_sock.close()
 telem_sock.close()
-print("Disconnecting from Teensy")
-ser.close()
 print("Ending Recording")
 camera.stop_recording()
 print("Closing Record Files")
@@ -451,6 +449,6 @@ telem_file_handle.close()
 print("Program Time:  %fs"%(total_time))
 print("Video Process Time:  %fs | Video Process Usage: %f%%"%(vid_loop_sum, (vid_loop_sum*100)/total_time))
 print("\tComms: %fs | %f%%\n\tStore: %fs | %f%%"%(vid_comms_sum, (vid_comms_sum*100)/vid_loop_sum, vid_store_sum,(vid_store_sum*100)/vid_loop_sum))
-print("\tStream Metrics:\n\t\tMax Packet Size: %d Bytes\n\t\tMax Send Time  : %f ms"%(vid_max_packet, vid_max_comms*1000))
+print("\tStream Metrics:\n\t\tMax Packet Size: %d Bytes\n\t\tMax Send Time  : %f ms\n"%(vid_max_packet, vid_max_comms*1000))
 test_rocket.print_flight_metrics()
 
