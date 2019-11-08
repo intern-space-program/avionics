@@ -196,7 +196,7 @@ while video_stream or telem_stream:
 					#Buffer Reached Threshold
 	
 					#Process Buffer data
-					parse_telemetry(telem_stream.buffer.getvalue())
+					data_point_buffer = parse_telemetry(telem_stream.buffer.getvalue(), data_point_buffer)
 
 					#Store Buffer to file
 					telem_stream.store_buffer()
