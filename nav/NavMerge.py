@@ -1,4 +1,8 @@
 '''
+Filename: NavMerge.py
+Programmed by: Mike Bernard
+Date: 2019-11-08
+
 NavMerge takes in sensor data that has been formatted by
 NavReceive and outputs data that has been merged to a
 minimized state vector.
@@ -7,160 +11,116 @@ minimized state vector.
 import numpy as np
 from nav.quaternion_utils import *
 from nav.constants import *
+from nav.common_utils import weighted_avg
 
 
-def decoded_data_to_merge_inputs(prev_state, decoded_data):
+def merge_accel(prev_position, accel_nc, accel_c):
     '''
-    Converts decoded sensor data into a list of
-    values used to init a NavMerge object.
-    :param prev_state: `dict` the last known nav state
-    :param decoded_data: `dict` of decoded sensor measurements
-    :return: `list` of data corresponding to arguments of NavMerge
+    Merges the IMU's conservative acceleration measurement with
+    a calculated conservative acceleration based on the IMU's
+    non-conservative measurement and gravity.
+
+    For parameter descriptions, see merge_main function.
     '''
-    return [
-        prev_state,
-        decoded_data['dt'],
-        decoded_data['airspeed'],
-        decoded_data['altitude'],
-        decoded_data['gps'],
-        decoded_data['delta_theta'],
-        decoded_data['attitude'],
-        decoded_data['accel_nc'],
-        decoded_data['accel'],
-        decoded_data['sigmas']
-    ]
+    if norm(prev_position) != 0:
+        a_1_calulated = accel_nc + G_E*prev_position/((norm(prev_position))**3)
+        a_1_avg = 0.5*(a_1_calulated + accel_c)
+    else:
+        a_1_avg = accel_c
+
+    return a_1_avg
 
 
-class NavMerge:
-    def __init__(self, prev_state, dt=0, airspeed=None, altitude=None, gps=None,
-                 delta_theta=None, q_inert_to_body=None, accel_nc=None, accel=None, sigmas=None):
-        '''
-        :param prev_state: Last known state vector
-        :param dt: Delta time between last known state and current measurements
-        :param airspeed: Magnitude of velocity vector
-        :param altitude: Height (z) above ground
-        :param gps: Postion vector (x, y, z) measured by the GPS
-        :param delta_theta: Delta-angle vector (da_x, da_y, da_z) measured by IMU
-        :param q_inert_to_body: The latest attitude quaternion measured by the IMU
-        :param accel_nc: Non-conservative (no gravity) acceleration vector (d2x, d2y, d2z) measured by IMU
-        :param accel: Conservative acceleration vector (d2x, d2y, d2z) measured by IMU
-        :param sigmas: The standard deviations of the sensors
+def merge_position(prev_position, prev_velocity, dt, accel_merged, gps, altitude):
+    '''
+    Merges the propagated previous position, the new GPS
+    position, and the altitude sensor measurements.
 
-        :type prev_state: `dict` of `string`: `np.array([])` and `string`: `float`
-        :type dt: `float`
-        :type airspeed: `float`
-        :type altitude: `float`
-        :type gps: `np.array([])` [1x3]
-        :type delta_theta: `np.array([])` [1x3]
-        :type q_inert_to_body: `np.array([])` [1x4]
-        :type accel_nc: `np.array([])` [1x3]
-        :type accel: `np.array([])` [1x3]
-        :type sigmas: `dict`
+    For parameter descriptions, see merge_main function.
+    '''
+    p_new_calc = prev_position + prev_velocity*dt + 0.5*accel_merged*dt**2
+    # TODO: add better weighting based on sensor error
+    z_merged = weighted_avg(values=[altitude, gps[2]], weights=[1, 1])
+    p_new_est = np.array([gps[0], gps[1], z_merged])
 
-        :return: `np.array([])`
-        '''
-        self.prev_state = prev_state
-        self.dt = dt
-        self.airspeed = airspeed
-        self.altitude = altitude
-        self.gps = gps
-        self.delta_theta = delta_theta
-        self.q_inert_to_body = q_inert_to_body
-        self.accel_nc = accel_nc
-        self.accel = accel
-        self.sigmas = sigmas
+    return 0.5*(p_new_calc + p_new_est)
 
-        self.accel_merged = self.merged_accel()
 
-        self.merged_vals = {
-            'time': self.prev_state['time'] + self.dt,
-            'position': self.merge_position(),
-            'velocity': self.merge_velocity(),
-            'attitude': self.attitude()
-        }
+def merge_velocity(prev_velocity, dt, accel_merged):
+    '''
+    Merges the integrated IMU acceleration and the airspeed
+    sensor velocity measurements into a less-errorful value.
 
-    @staticmethod
-    def weighted_avg(values, weights):
-        '''
-        Takes a list of values and a list of weights associated
-        with those values (index-to-index) and returns a weighted
-        averaged of those values as a float.
-        '''
-        denom = sum([1/w**2 for w in weights])
-        num = sum([1/w**2 * v for v, w in zip(values, weights)])
+    For parameter descriptions, see merge_main function.
+    '''
+    v_new = prev_velocity + accel_merged*dt
 
-        return num/denom
+    # TODO: implement this if an airspeed sensor becomes available
+    # std_imu = sigmas['IMU']
+    # std_airspeed = sigmas['airspeed']
+    # v_new_mag = norm(v_new)
+    # v_new_mag_est = weighted_avg([v_new_mag, airspeed],
+    #                              [std_imu, std_airspeed])
+    #
+    # return v_new_mag_est * v_new / v_new_mag
 
-    def merge_position(self):
-        '''
-        Merges the propagated previous position, the new GPS
-        position, and the altitude sensor measurements.
-        '''
-        p_prev = self.prev_state['position']
-        v_prev = self.prev_state['velocity']
-        std_alt = self.sigmas['altitude']
-        std_gps = self.sigmas['gps']
+    return v_new
 
-        p_new_calc = p_prev + v_prev*self.dt + 0.5*self.accel_merged*self.dt**2
-        p_new_gps = self.gps
-        z_new = self.altitude
 
-        z_merged = self.weighted_avg([z_new, self.gps[2]],
-                                     [std_alt, std_gps])
+def merge_attitude(prev_attitude, current_attitude, delta_theta):
+    '''
+    Propagates the attitude based on the delta-angle change
+    measured by the IMU. Assumes small angles only.
 
-        p_new_est = np.array([p_new_gps[0], p_new_gps[1], z_merged])
+    :param prev_attitude: `np.array([1x4])` (--) A quaternion of the last known attitude
+    :param current_attitude: `np.array([1x4])` (--) The IMU's estimate of the current attitude
+    :param delta_theta: `np.array([1x3])` (rad) The IMU's delta-angle measurements
+    '''
+    dq_inert_to_body = norm(concatenate([np.array([1]), 0.5*delta_theta]))
+    q_inert_to_body_new_calc = qcomp(prev_attitude, dq_inert_to_body)
 
-        return 0.5*(p_new_calc + p_new_est)
+    q_inert_to_body_new = 0.5*(current_attitude + q_inert_to_body_new_calc)
 
-    def integrate_imu_linear(self):
-        '''
-        Integrate IMU linear acceleration into linear velocity.
-        :return: `numpy.array` of new velocity
-        '''
-        v_prev = self.prev_state['velocity']
-        v_new = v_prev + self.accel_merged*self.dt
+    return q_inert_to_body_new
 
-        return v_new
 
-    def merge_velocity(self):
-        '''
-        Merges the integrated IMU acceleration and the airspeed
-        sensor velocity measurements into a less-errorful value.
-        '''
-        v_new_i = self.integrate_imu_linear()
-        std_imu = self.sigmas['IMU']
-        std_airspeed = self.sigmas['airspeed']
-        v_new_mag = norm(v_new_i)
-        v_new_mag_est = self.weighted_avg([v_new_mag, self.airspeed],
-                                          [std_imu, std_airspeed])
+def merge_main(prev_state, new_measurements):
+    '''
+    Manages the propagation forward in time from the last
+    known state to the current time using sensor measurements.
 
-        return v_new_mag_est * v_new_i / v_new_mag
+    :param prev_state: `dict` The last known P, V, Att of the vehicle.
+    :param new_measurements: `dict` The most recent sensor measurements.
 
-    def merged_accel(self):
-        '''
-        Merges the IMU's conservative acceleration measurement with
-        a calculated conservative acceleration based on the IMU's
-        non-conservative measurement and gravity.
-        '''
-        p_prev = self.prev_state['position']
+    :return: `dict` The estimated current state of the vehicle.
+    '''
+    ### SETUP ###
 
-        if norm(p_prev) != 0:
-            a_1_calulated = self.accel_nc + G_E*p_prev/p_prev**3
-            a_1_avg = 0.5*(a_1_calulated + self.accel)
-        else:
-            a_1_avg = self.accel
+    # unpack the previous state
+    prev_time = prev_state['time']
+    prev_position = prev_state['position']
+    prev_velocity = prev_state['velocity']
+    prev_attitude = prev_state['attitude']
 
-        return a_1_avg
+    # unpack the sensor measurements
+    dt = new_measurements['dt']  # `float` (s) since previous state
+    # airspeed = new_measurements['airspeed']  # `float` (m/s) current airspeed (no airspeed sensor F2019)
+    altitude = new_measurements['altitude']  # `float` (m) current altitude
+    gps = new_measurements['gps']  # `np.array([1x3])` (m) GPS position vector
+    delta_theta = new_measurements['delta_theta']  # `np.array([1x3])` (rad) delta-angle IMU reading
+    accel_nc = new_measurements['accel_nc']  # `np.array([1x3])` (m/s**2) non-conservative acceleration
+    accel_c = new_measurements['accel_c']  # `np.array([1x3])` (m/s**2) conservative acceleration
+    q_inert_to_body = new_measurements['q_inert_to_body']  # `np.array([1x4])` (--) attitude quaternion
 
-    def attitude(self):
-        '''
-        Propagates the attitude based on the delta-angle change
-        measured by the IMU. Assumes small angles only.
-        '''
-        q_inert_to_body_prev = self.prev_state['attitude']
-        dq_inert_to_body = norm(concatenate([np.array([1]), 0.5*self.delta_theta]))
-        q_inert_to_body_new_calc = qcomp(q_inert_to_body_prev, dq_inert_to_body)
+    ### PROPAGATION ###
 
-        q_inert_to_body_new = 0.5*(self.q_inert_to_body + q_inert_to_body_new_calc)
+    accel_merged = merge_accel(prev_position, accel_nc, accel_c)  # merge the acceleration measurements
 
-        return q_inert_to_body_new
+    merged_vals = {
+        'time': prev_time + dt,
+        'position': merge_position(prev_position, prev_velocity, dt, accel_merged, gps, altitude),
+        'velocity': merge_velocity(prev_velocity, dt, accel_merged),
+        'attitude': merge_attitude(prev_attitude, q_inert_to_body, delta_theta)
+    }
+
+    return merged_vals
