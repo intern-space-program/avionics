@@ -55,6 +55,7 @@ double base_altitude = 0;
 double gps_base_altitude =0;
 double* alti_offset_address = &base_altitude;
 double* gps_alti_offset_address = &gps_base_altitude;
+bool altitude_valid = false;
 
 //BNO 055 Related Assignments................
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
@@ -166,7 +167,6 @@ void setup(void)
 //__________________________________Final Handshake Sequence______________________________// 
 
 
-/*
   for(int i = 0; i < 3; i++){
      piSerial.println("initialized");
   }
@@ -182,16 +182,9 @@ void setup(void)
         break;
     }
   }
- */ 
+
 //__________________________________Final Handshake Sequence______________________________//
-
-  GPS.read();
-  if (GPS.newNMEAreceived()) {
-    if (!GPS.parse(GPS.lastNMEA()))
-      return; 
-  }
-  *gps_alti_offset_address = GPS.altitude;
-
+  *gps_alti_offset_address = 0.0;
 } 
 
 
@@ -279,11 +272,14 @@ void loop(void) {
       imu.add(magneto.z());
 
     //_______________Read GPS______________//
-      // Serial.print(GPS.latitudeDegrees);
-      // Serial.print(GPS.longitudeDegrees);
+      if (GPS.altitude != 0 && altitude_valid == false)
+      {
+        *gps_alti_offset_address = GPS.altitude;
+        altitude_valid = true;
+      }
       gps.add(GPS.latitudeDegrees);
       gps.add(GPS.longitudeDegrees);
-      gps.add(GPS.altitude)-(*gps_alti_offset_address);
+      gps.add(GPS.altitude - *gps_alti_offset_address);
 
     //__________Check Connections__________//
 
