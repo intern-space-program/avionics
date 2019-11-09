@@ -31,7 +31,7 @@ int packetNo = 0;
 bool BNO_CONNECTED;   // Flags to tell if the BMP and BNO sensors are connected
 bool BMP_CONNECTED;   // Flags to tell if the BMP and BNO sensors are connected
 uint32_t timer = millis();
-#define piSerial Serial2  
+#define piSerial Serial  
 
 //GPS Assignments..........................
 #define GPSSerial Serial1
@@ -107,7 +107,7 @@ void setup(void)
   // uncomment this line to turn on RMC (recommended minimum) and GGA (fix data) including altitude
   // GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   // uncomment this line to turn on only the "minimum recommended" data
-  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   // For parsing data, we don't suggest using anything but either RMC only or RMC+GGA since
   // the parser doesn't care about other sentences at this time
   // Set the update rate
@@ -120,7 +120,7 @@ void setup(void)
   
   delay(1000);
 //__________________________________Final Handshake Sequence______________________________// 
-
+/*
   for(int i = 0; i < 3; i++){
      piSerial.println("initialized");
   }
@@ -132,7 +132,7 @@ void setup(void)
         break;
     }
   }
- 
+ */
 } 
 
 
@@ -151,7 +151,8 @@ void loop(void) {
 
 
 //_______________________________________Sample GPS________________________//
-  char c = GPS.read();
+
+  GPS.read();
 
   if (GPS.newNMEAreceived()) {
     // a tricky thing here is if we print the NMEA sentence, or data
@@ -201,20 +202,16 @@ void loop(void) {
     imu.add(laccel.x());
     imu.add(laccel.y());
     imu.add(laccel.z());
-    imu.add(gvector.x());
-    imu.add(gvector.y());
-    imu.add(gvector.z());
     imu.add(angular_vel.x());
     imu.add(angular_vel.y());
     imu.add(angular_vel.z());
-    imu.add(magneto.x());
-    imu.add(magneto.y());
-    imu.add(magneto.z());
+    
 
     // Serial.print(GPS.latitudeDegrees);
     // Serial.print(GPS.longitudeDegrees);
     gps.add(GPS.latitudeDegrees);
     gps.add(GPS.longitudeDegrees);
+    gps.add(GPS.altitude);
 
     serializeJson(doc, piSerial);
     piSerial.println("");
