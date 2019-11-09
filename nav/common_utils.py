@@ -1,3 +1,12 @@
+'''
+File name: common_utils.py
+Programmed by: Mike Bernard
+Date: 2019-11-08
+
+Common helper functions used in multiple scripts.
+'''
+
+
 def weighted_avg(values, weights):
     '''
     Takes a list of values and a list of weights associated
