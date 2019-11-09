@@ -30,6 +30,8 @@
 int packetNo = 0;
 bool BNO_CONNECTED;   // Flags to tell if the BMP and BNO sensors are connected
 bool BMP_CONNECTED;   // Flags to tell if the BMP and BNO sensors are connected
+bool GPS_CONNECTED;   // Flags to tell if the GPS is connected.
+
 uint32_t timer = millis();
 #define piSerial Serial  
 
@@ -162,7 +164,7 @@ void loop(void) {
     if (!GPS.parse(GPS.lastNMEA())) // this also sets the newNMEAreceived() flag to false
       return; // we can fail to parse a sentence in which case we should just wait for another
   }
-  // if millis() or timer wraps around, we'll just reset it
+  //if millis() or timer wraps around, we'll just reset it
   if (timer > millis()) timer = millis();
   if (millis() - timer > 100) {
     timer = millis(); // reset the timer
@@ -213,11 +215,18 @@ void loop(void) {
     gps.add(GPS.longitudeDegrees);
     gps.add(GPS.altitude);
 
+    
+    //_________________________________Connection Checking_________________________________________// 
+    if ((gps[1] == 0) || (gps[0] ==0)) {
+      GPS_CONNECTED = 1;
+    }
+    
+
+    if ((tpa[2] < 0) || (tpa[2] > 3300)) {
+      BMP_CONNECTED = 0;
+    }
     serializeJson(doc, piSerial);
     piSerial.println("");
-
-    
-    
     
     packetNo++;
   }
