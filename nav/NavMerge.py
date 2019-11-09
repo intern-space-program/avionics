@@ -23,7 +23,7 @@ def merge_accel(prev_position, accel_nc, accel_c):
     For parameter descriptions, see merge_main function.
     '''
     if norm(prev_position) != 0:
-        a_1_calulated = accel_nc + G_E*prev_position/((norm(prev_position))**3)
+        a_1_calulated = accel_nc - G_E*prev_position/((norm(prev_position))**3)
         a_1_avg = 0.5*(a_1_calulated + accel_c)
     else:
         a_1_avg = accel_c
