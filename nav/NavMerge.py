@@ -3,9 +3,8 @@ Filename: NavMerge.py
 Programmed by: Mike Bernard
 Date: 2019-11-08
 
-NavMerge takes in sensor data that has been formatted by
-NavReceive and outputs data that has been merged to a
-minimized state vector.
+NavMerge takes in sensor data and propagates the state forward from
+the last known state to the current time.
 '''
 
 import numpy as np
