@@ -5,74 +5,94 @@ Programmed by: Mike Bernard
 Date: 2019-11-05
 '''
 
-def weighted_avg_test():
-    pass
+from numpy import array, concatenate, allclose
+from numpy.linalg import norm
+from nav.constants import PASS, FAIL
+from nav.NavMerge import *
+
+
+def merge_accel_test_null():
+    # setup
+    description = 'merge_accel_test_null - Test merge_accel with zeroed-out inputs'
+    prev_position = array([0.0, 0.0, 0.0])
+    accel_nc = array([0.0, 0.0, 0.0])
+    accel_c = array([0.0, 0.0, 0.0])
+
+    # expected results
+    exp = array([0.0, 0.0, 0.0])
+
+    # unit test
+    ret = merge_accel(prev_position, accel_nc, accel_c)
+
+    # results
+    if allclose(ret, exp, atol=0.001):
+        return PASS, description
+    else:
+        return FAIL, description
+
+
+def merge_accel_test_values():
+    # setup
+    description = 'merge_accel_test_values - Test merge_accel with value inputs'
+    prev_position = array([1.73205, 1.73205, 1.73205])
+    accel_nc = array([0.0, 0.0, 0.0])
+    accel_c = array([0.0, 0.0, 0.0])
+
+    # expected results
+    # TODO convert this from a calculation to actual numbers
+    new_a = 0.5*(-G_E*prev_position/((norm(prev_position))**3))
+    exp = new_a
+
+    # unit test
+    ret = merge_accel(prev_position, accel_nc, accel_c)
+
+    # results
+    if allclose(ret, exp, atol=0.01):
+        return PASS, description
+    else:
+        return FAIL, description
 
 
 def merge_position_test():
     pass
 
 
-def integrate_imu_linear_test():
+def merged_velocity_test():
     pass
 
 
-def merge_velocity_test():
+def merge_attitude_test():
     pass
 
 
-def merged_accel_test():
-    pass
-
-
-def attitude_test():
-    pass
-
-
-def init_test():
+def merge_main_test():
     pass
 
 
 # Test Loop
 def main():
-    test_order = [
-        "weighted_avg",
-        "merge_position",
-        "integrate_imu_linear",
-        "merge_velocity",
-        "merged_accel",
-        "attitude",
-        "__init__"
+    tests = [
+        merge_accel_test_null,
+        merge_accel_test_values
     ]
 
-    test_functions = {
-        # unit tests
-        'weighted_avg': weighted_avg_test,
-        'merge_position': merge_position_test,
-        'integrate_imu_linear': integrate_imu_linear_test,
-        'merge_velocity': merge_velocity_test,
-        'merged_accel': merged_accel_test,
-        'attitude': attitude_test,
-
-        # "integration" test
-        '__init__': init_test
-    }
-
-    statuses = {}
     passed = 0
     failed = 0
+    fail_messages = []
 
-    for name, test in test_functions.items():
-        status = test()  # 0 = pass, 1 = fail
-        statuses[name] = status
-        if status:
-            failed += 1
-        else:
+    for test in tests:
+        status, description = test()
+        if status == PASS:
             passed += 1
+        else:
+            failed += 1
+            fail_messages.append(description)
 
-    for test, status in statuses.items():
-        if status == 1:
-            print('Test Failed: {}'.format(test))
+    print('{} out of {} tests passed.'.format(passed, len(tests)))
+    if len(fail_messages) > 0:
+        print('Failed tests:')
+        for msg in fail_messages:
+            print('\t' + msg)
 
 
 if __name__ == '__main__':
