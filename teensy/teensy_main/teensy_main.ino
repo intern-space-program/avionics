@@ -85,8 +85,10 @@ void setup(void)
 
 //Start and set the BNO 055..................................................
   uint8_t i;
-  for(; i < 3; i++) {
-    piSerial.print("On try %d:", i);
+  for(i = 0; i < 3; i++) {
+    piSerial.print("On try ");
+    piSerial.print(i);
+    piSerial.print(": ");
     if(!bno.begin()) {
       piSerial.print("No BNO055 Detected!");
       BNO_CONNECTED = false;
@@ -110,7 +112,9 @@ void setup(void)
 
 //Start and set the BNO 055..................................................
   for(i = 0; i < 3; i++){
-    piSerial.print("On try %d:", i);
+    piSerial.print("On try ");
+    piSerial.print(i);
+    piSerial.print(": ");
     if (!bmp.begin()) {
       piSerial.println("No BMP280 Detected!");
       BMP_CONNECTED = false;
@@ -129,9 +133,11 @@ void setup(void)
 
 //Start and set the Adafruit GPS.............................................
   for(i = 0; i < 3; i++){
-    piSerial.print("On try %d:", i);
+    piSerial.print("On try ");
+    piSerial.print(i);
+    piSerial.print(": ");
     // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
-    if(!GPS.begin(9600);){
+    if(!GPS.begin(9600)){
       piSerial.println("No GPS Detected!");
       GPS_CONNECTED = false;
     }
@@ -191,7 +197,6 @@ void loop(void) {
     if (!GPS.parse(GPS.lastNMEA())) // this also sets the newNMEAreceived() flag to false
       return; // we can fail to parse a sentence in which case we should just wait for another
   }
-<<<<<<< HEAD
 
   // if millis() or timer wraps around, we'll just reset it
   if (timer > millis()) 
