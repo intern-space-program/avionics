@@ -1,3 +1,5 @@
+__pycache__/*
+*/__pycache__/*
 .idea
 nav/design_diagram.key
 .DS_Store
