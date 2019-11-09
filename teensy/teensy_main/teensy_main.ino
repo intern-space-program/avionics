@@ -17,12 +17,9 @@
 #include <Adafruit_BMP280.h>
 #include <utility/imumaths.h>
 #include <Adafruit_GPS.h>
-//_____________________________________________________________________________//
 
-//_______________________________Macros________________________________________//
 #define piSerial Serial
 #define GPSSerial Serial1
-//_____________________________________________________________________________//
 
 //___________________________Global Assignments_________________________________//
 
@@ -79,73 +76,55 @@ void setup(void)
   piSerial.begin(115200);
   piSerial.print("dump_init");
 
-  //__________________________________Initial Handshake Sequence____________________________//
-
   initial_hand_shake_sequence();
-
-  //____________________________________Startup Sequence_____________________________________// 
 
   set_up_imu();
 
   check_for_bmp_status();
 
   set_up_bmp();
-  
-  //.........................................................................//
 
   set_up_gps();
-  //__________________________________Final Handshake Sequence______________________________// 
 
   final_hand_shake_sequence();
 } 
 
-////////////////////////////////////////////////////////////////////////////////////
-//.................................Void Loop......................................//
-////////////////////////////////////////////////////////////////////////////////////
 void loop(void) {
-  //_________________________________________________________________________//
-  //_______________________________Sample GPS________________________________//
-  //_________________________________________________________________________//
-  // You first need to read from the GPS registers.
+
   sample_GPS();
 
-  /* if millis() or timer wraps around, we'll just reset it */
-  // We don't want the timer to be bigger the clock timer on the processor.
+  /* if millis() or timer wraps around, we'll just reset it
+     We don't want the timer to be bigger the clock timer on the processor. */
   if (timer > millis())
   {
     timer = millis();
   }
 
   /////////////////////////////////////////////////////////////////////////////////// 
-  //  READ SENSORS AND SEND DATA AT 10Hz
+  //  READ SENSORS AND SEND DATA AT 10Hz. (Every 100 milliseconds)
   ///////////////////////////////////////////////////////////////////////////////////
   if (millis() - timer > 100) 
   {
-    // Only show the GPS is connected when it has valid data.
-    GPS_CONNECTED = false;
     //_____________Reset Timer______________//
     timer = millis(); // reset the timer
  
     //___________Create JSON Object__________// 
     StaticJsonDocument<500> doc; //PACKET SIZE = 550
 
+    //___________Create JSON Arrays__________//
     JsonArray hdr = doc.createNestedArray("hdr"); //create the Json Object
     JsonArray tpa = doc.createNestedArray("tpa");
     JsonArray imu = doc.createNestedArray("imu");
     JsonArray gps = doc.createNestedArray("gps");
 
     tpa = fill_in_bmp_array(tpa);
-      
-    //________________Read IMU_______________//
+
     imu = fill_in_bno_array(imu);
 
-    //_______________Read GPS______________//
     gps = fill_in_gps_array(gps);
 
-    //__________Check Connections__________//
     set_sensor_status_flags(gps, imu, tpa);
 
-    // Add data to header packet
     hdr = fill_in_hdr_array(hdr);
 
     //______________Send Data______________//
@@ -236,6 +215,9 @@ JsonArray fill_in_bno_array(JsonArray imu)
 
 JsonArray fill_in_gps_array(JsonArray gps)
 {
+  // Only show the GPS is connected when it has valid data.
+  GPS_CONNECTED = false;
+
   // Subtract the ground-level altitude from the GPS altitude measurements
   // to reframe measurements to calculation levels.
   if (GPS.altitude != 0 && altitude_valid == false)
