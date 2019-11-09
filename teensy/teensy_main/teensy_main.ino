@@ -156,6 +156,17 @@ void loop(void) {
   } // timer
 } // loop
 
+/*
+ * Function Name: sample_gps() 
+ * 
+ * Variables: None
+ * 
+ * Output: None
+ * 
+ * Description: This function reads from the GPS registers that contiain data
+ *              and tries to parse the last data string that it receives. If
+ *              no data can be found, the function returns and the loop continues.
+ */
 void sample_GPS()
 {
   GPS.read();
@@ -167,6 +178,18 @@ void sample_GPS()
   }
 }
 
+/*
+ * Function Name: fill_in_bmp_array() 
+ * 
+ * Variables: JsonArray tpa
+ * 
+ * Output: JsonArray
+ * 
+ * Description: This function reads from the bmp sensor, adding
+ *              values to the tpa json array. This is necessary due
+ *              to the need for methods on the tpa object, where a pointer
+ *              could not be used.
+ */
 JsonArray fill_in_bmp_array(JsonArray tpa)
 {
   tpa.add(bmp.readTemperature());       
@@ -176,6 +199,17 @@ JsonArray fill_in_bmp_array(JsonArray tpa)
   return tpa;
 }
 
+/*
+ * Function Name: fill_in_bno_array() 
+ * 
+ * Variables: 
+ *   - name: bno type: Json Array
+ * 
+ * Output: JsonArray
+ * 
+ * Description: This function samples the IMU, creating the necessary
+ *              vectors that are then used to sample the data.
+ */
 JsonArray fill_in_bno_array(JsonArray imu)
 {
   quat = bno.getQuat();           
