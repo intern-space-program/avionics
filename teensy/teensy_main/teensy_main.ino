@@ -52,8 +52,9 @@ Adafruit_GPS GPS(&GPSSerial);
 //BMP 280 Related Assignments ...............
 Adafruit_BMP280 bmp;
 double base_altitude = 0;
-double* alti_offset = &base_altitude;
-
+double gps_base_altitude =0;
+double* alti_offset_address = &base_altitude;
+double* gps_alti_offset_address = &gps_base_altitude;
 
 //BNO 055 Related Assignments................
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
@@ -100,17 +101,9 @@ void setup(void)
     }
   }
   
-  if(BMP_CONNECTED){
-    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
-                    Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
-                    Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
-                    Adafruit_BMP280::FILTER_X16,      /* Filtering. */
-                    Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
 
-    *alti_offset = bmp.readAltitude(1013.25);
-  }
 
-//Start and set the BNO 055..................................................
+//Start and set the BMP 055..................................................
   for(i = 0; i < 3; i++){
     piSerial.print("On try ");
     piSerial.print(i);
@@ -125,6 +118,17 @@ void setup(void)
       break;
     }
   }
+
+
+    if(BMP_CONNECTED){
+    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                    Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                    Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                    Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                    Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+
+    *alti_offset_address = bmp.readAltitude(1013.25);
+  }
   
   if(BNO_CONNECTED){
     bno.setExtCrystalUse(true);
@@ -132,29 +136,17 @@ void setup(void)
 //.........................................................................//
 
 //Start and set the Adafruit GPS.............................................
-  for(i = 0; i < 3; i++){
-    piSerial.print("On try ");
-    piSerial.print(i);
-    piSerial.print(": ");
-    // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
-    if(!GPS.begin(9600)){
-      piSerial.println("No GPS Detected!");
-      GPS_CONNECTED = false;
-    }
-    else{
-      piSerial.println("GPS Detected!");
-      GPS_CONNECTED = true;
-      break;
-    }
-  }
+  GPS.begin(9600);
+  GPS_CONNECTED = true;
   if(GPS_CONNECTED){
+    piSerial.println("GPS Detected!");
     /*  Uncomment this line to turn on RMC (recommended minimum)
         and GGA (fix data) including altitude */
-    // GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+    GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
 
     /*  Uncomment this line to turn on only the 
         "minimum recommended" data */
-    GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
+    //GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
 
     /*  For parsing data, we don't suggest using anything but 
         either RMC only or RMC+GGA since the parser doesn't care 
@@ -172,10 +164,16 @@ void setup(void)
     delay(1000);
   }
 //__________________________________Final Handshake Sequence______________________________// 
+
+
 /*
   for(int i = 0; i < 3; i++){
      piSerial.println("initialized");
   }
+
+
+
+
 
 
   while (1){
@@ -184,7 +182,16 @@ void setup(void)
         break;
     }
   }
- */
+ */ 
+//__________________________________Final Handshake Sequence______________________________//
+
+  GPS.read();
+  if (GPS.newNMEAreceived()) {
+    if (!GPS.parse(GPS.lastNMEA()))
+      return; 
+  }
+  *gps_alti_offset_address = GPS.altitude;
+
 } 
 
 
@@ -221,6 +228,7 @@ void loop(void) {
   ///////////////////////////////////////////////////////////////////////////////////
   if (millis() - timer > 100) 
   {
+    GPS_CONNECTED = false;
     //_____________Reset Timer______________//
       timer = millis(); // reset the timer
       
@@ -247,7 +255,7 @@ void loop(void) {
     //_____________Read TPA Data_____________//
       tpa.add(bmp.readTemperature());       
       tpa.add(bmp.readPressure());
-      tpa.add((bmp.readAltitude(1013.25))-(*alti_offset+.1));
+      tpa.add((bmp.readAltitude(1013.25))-(*alti_offset_address+.1));
       
     //________________Read IMU_______________//
       imu.add(vaccel.x());
@@ -275,16 +283,23 @@ void loop(void) {
       // Serial.print(GPS.longitudeDegrees);
       gps.add(GPS.latitudeDegrees);
       gps.add(GPS.longitudeDegrees);
-      gps.add(GPS.altitude);
+      gps.add(GPS.altitude)-(*gps_alti_offset_address);
 
     //__________Check Connections__________//
-      if ((gps[1] == 0) || (gps[0] ==0)) {
-        GPS_CONNECTED = true;
+
+      if ((gps[1] != 0) || (gps[0]!= 0)) {GPS_CONNECTED = true;}
+  
+      if ((tpa[2] < -50) || (tpa[2] > 3300)) {BMP_CONNECTED = false, BNO_CONNECTED = false;}
+  
+      if (imu[3] == 0 && imu[4] == 0 && imu[5] == 0 && imu[6] == 0)
+      {
+        BNO_CONNECTED = false;
       }
 
-      if ((tpa[2] < 0) || (tpa[2] > 3300)) {
-        BMP_CONNECTED = false;
-      }
+      hdr.add(GPS_CONNECTED);
+      hdr.add(BMP_CONNECTED);
+      hdr.add(BNO_CONNECTED);
+
 
     //______________Send Data______________//
       serializeJson(doc, piSerial);
