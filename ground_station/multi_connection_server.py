@@ -179,11 +179,12 @@ telem_stream = stream('TELEMETRY', server_telem_sock, telem_client, telem_file)
 data_point_buffer = []
 
 while video_stream or telem_stream:
-	events = sel.select(timeout=None)#BLOCKING, can set timeout to not block
+	events = sel.select(timeout=0.1)#BLOCKING, can set timeout to not block
 	for key, mask in events:
 		if key.data is None:
 			print("CONNECTION ATTEMPT")
 		if key.data is not(None) and mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
+			print("New Data: Mask = %d"%(mask))
 			socket_obj = key.fileobj
 			if (name_source(socket_obj) == 'VIDEO' and video_stream):
 				video_stream.recv_new_packet()
