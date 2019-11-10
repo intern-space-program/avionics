@@ -18,7 +18,7 @@
 #include <utility/imumaths.h>
 #include <Adafruit_GPS.h>
 
-#define piSerial Serial
+#define piSerial Serial2 #PI SERIAL IS CONNECTED TO TX2/RX2 PORTS!!!!! 
 #define GPSSerial Serial1
 
 //___________________________Global Assignments_________________________________//
