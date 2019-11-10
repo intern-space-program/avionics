@@ -1,5 +1,12 @@
-from nav.NavIO import json_to_dict, dict_to_json
-from nav.NavMerge import NavMerge
+'''
+File name: NavMain.py
+Programmed by: Mike Bernard
+Date: 2019-11-09
+
+Provides access to the main functionality of Nav.
+'''
+
+import nav.NavMerge
 import nav.NavFilter
 
 
@@ -9,19 +16,16 @@ def NavMain(prev_state, sensor_data):
     reception of raw sensor data to outputted
     navigation telemetry.
 
+    :param prev_state: The last known state of the vehicle
+    :type prev_state: `dict`
     :param sensor_data: The raw sensor measurements
-    :type sensor_data: TODO
+    :type sensor_data: `dict
     :return: `dict` of updated navigation state telemetry
     '''
-    decoded_data = json_to_dict(sensor_data)
+    merge = nav.NavMerge.merge_main(prev_state, sensor_data)
 
-    merge_inputs = nav.NavMerge.decoded_data_to_merge_inputs(prev_state, decoded_data)
-    nav_merge = NavMerge(*merge_inputs)
-    merged_data = nav_merge.merged_vals
+    # TODO: return filtered data rather than just merged data once NavFilter complete
+    # filter = nav.NavFilter.filter_main(merge)
+    # return filter
 
-    nav_filter = NavFilter(merged_data)
-    filtered_data = nav_filter.filtered_vals
-
-    encoded_data = dict_to_json(filtered_data)
-
-    return encoded_data
+    return merge
