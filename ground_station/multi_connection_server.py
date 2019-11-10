@@ -184,7 +184,6 @@ while video_stream or telem_stream:
 		if key.data is None:
 			print("CONNECTION ATTEMPT")
 		if key.data is not(None) and mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
-			print("New Data: Mask = %d"%(mask))
 			socket_obj = key.fileobj
 			if (name_source(socket_obj) == 'VIDEO' and video_stream):
 				video_stream.recv_new_packet()
