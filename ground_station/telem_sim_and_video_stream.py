@@ -95,7 +95,7 @@ class rocket:
 
 		#Rocket model properties
 		self.mass = 1 #(kg)
-		self.drag_const  = 0.01 #0.5*Cd*A*p all lumped together | reasonable is around 0.01 or less
+		self.drag_const  = 0.001 #0.5*Cd*A*p all lumped together | reasonable is around 0.01 or less
 
 		#Overall Inertial Frame Variables
 		self.position = [[0,0,0],[0,0,0],[0,0,0]] # (m, m/s, m/s^2) 9DOF freedom position: 3DOF position, 3DOF velocity, 3DOF accel
@@ -504,7 +504,7 @@ def store_interrupt_func():
 #Global Variables
 vid_record_file = store_dir + '/video_stream.h264' #on-board file video is stored to
 telem_record_file = store_dir + '/telemtry_stream.txt'
-bitrate_max = 200000 # bits per second
+bitrate_max = 100000 # bits per second
 #record_time = 10.1 # Time in seconds that the recording runs for
 record_chunk = 0.2 #chunk size in seconds video object is broken into and sent 
 frame_rate = 15 #camera frame rate
@@ -518,11 +518,12 @@ if record_chunk < 1/frame_rate:
 #Camera Settings
 camera = PiCamera()
 camera.resolution = (640, 480)
+#camera.resolution = (320, 240)
 camera.framerate = frame_rate
 
 #Network Setup
 SERVER_IP = '73.136.139.198'
-#SERVER_IP = '192.168.0.108'
+SERVER_IP = '192.168.0.183'
 SERVER_VIDEO_PORT = 5000
 SERVER_TELEM_PORT = 5001
 
@@ -542,7 +543,7 @@ print("Beginning Stream!")
 camera.start_recording(video_stream.write_buffer, format='h264', bitrate=bitrate_max)
 
 #Initiate Rocket Sim
-test_rocket = rocket(9.8, 0, 0.05, 0.0)
+test_rocket = rocket(9.8, 0, 0.05, 0)
 test_rocket.transpose_rocket_frame_to_ground_frame()
 
 #Start timer threads
@@ -553,8 +554,8 @@ program_start = time.time()
 
 #Main Program Loop
 while test_rocket:
-	if (test_rocket.overall_time < 2):
-		test_rocket.thrust = 80.0
+	if (test_rocket.overall_time < 3):
+		test_rocket.thrust = 150.0
 	else:
 		test_rocket.thrust = 0.0
 	test_rocket.update_state()
