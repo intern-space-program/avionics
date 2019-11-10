@@ -34,68 +34,376 @@ import json
 import serial
 import struct
 
+home = '/home/pi'
+store_dir = home + "/rocket_data"
+cmd = "mkdir " + store_dir
+os.system(cmd)
+
+log_file = store_dir + "/system_log.txt"
+log_handle = open(log_file, 'w')
+
+def get_time():
+	absolute_tm = time.localtime()
+	ms = time.time()
+	ms = ms - int(ms)
+	return str(absolute_tm[3]) + ":" + str(absolute_tm[4]) + ":" + str(absolute_tm[5]) + ":%.3f| "%(ms)
+
+def log_start(msg):
+	log_handle.write(("\n" + get_time() + msg))
+
+absolute_tm = time.localtime()
+time_str = "Script Started at " + str(absolute_tm[3]) + ":" + str(absolute_tm[4]) + ":" + str(absolute_tm[5])
+time_str += " on " + str(absolute_tm[1]) + "/" + str(absolute_tm[2]) + "/" + str(absolute_tm[0])
+
+log_handle.write(time_str)
+
+#============== MACROS ===============================
+#Constant Macros
+PI = 3.1415926535
+
+#Network Macros
+STREAM_READ = 1
+STREAM_WRITE = 2
+
+#================================== Networking Class =========================
+class client_stream:
+	def __init__(self, name, server_IP, server_port, read_store_file, write_store_file, mode):
+		self.name = name
+		self.server_IP = server_IP
+		self.server_port = server_port
+		self.socket_obj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.read_store_file = read_store_file
+		self.write_store_file = write_store_file
+		self.mode = mode #can be STREAM_READ, STREAM_WRTIE, or STREAM_READ|STREAM_WRITE
+		self.alive = False
+		self.read_file = False
+		self.write_file = False
+		self.print_output = True
+		self.log_output = True
+		
+		if (mode & STREAM_READ == STREAM_READ):
+			self.read_buffer = BytesIO() 
+			self.read_file_handle = open(read_store_file, 'wb')
+			self.read_file = True
+
+		if (mode & STREAM_WRITE == STREAM_WRITE):
+			self.write_buffer = BytesIO()
+			self.write_file_handle = open(write_store_file, 'wb')
+			self.write_file = True
+
+		#Statistics [OPTIONAL]
+		self.recv_packet_cnt = 0
+		self.recv_total_bytes = 0
+		self.send_packet_cnt = 0
+		self.send_total_bytes = 0
+	
+	def __bool__(self):
+		return self.alive
+	
+	def print_statistics(self):
+		mode_name = ['STREAM_READ', 'STREAM_WRITE', 'STREAM_READ|STREAM_WRITE']
+		print("Stream Name: %s"%(self.name))
+		print("Stream Mode: %s"%(mode_name[self.mode-1]))
+		print("Read:\n\tPackets:     %d\n\tTotal Bytes: %d"%(self.recv_packet_cnt, self.recv_total_bytes))
+		print("Write:\n\tPackets:     %d\n\tTotal Bytes: %d"%(self.send_packet_cnt, self.send_total_bytes))
+
+	def stream_print(self, msg):
+		if (not(self.print_output)):
+			return
+		print("%s: %s"%(self.name, msg))
+
+	def log_print(self, msg):
+		if (not(self.log_output)):
+			return
+		log_start("%s: %s"%(self.name, msg))
+	
+	def connect_to_server(self):
+		connect_cnt = 0
+		self.log_print("Attempting to connect to server")
+		while connect_cnt < 5:
+			self.stream_print("Server connection attempt #%d"%(connect_cnt+1))
+			try:
+				self.socket_obj.connect_ex((self.server_IP, self.server_port))
+				self.stream_print("Connection Successful")
+				self.log_print("Connection Successful")
+				self.alive = True
+				break
+			except:
+				connect_cnt += 1
+
+	def store_buffer(self, mode):
+		if (mode & STREAM_READ == STREAM_READ):
+			if (not(self.mode & STREAM_READ)):
+				self.stream_print("READ ACCESS DENIED")
+				return
+			if(not(self.read_file)):
+				return
+			self.stream_print("Storing READ Buffer: %d Bytes"%(self.get_buffer_size(STREAM_READ)))
+			self.read_file_handle.write(self.read_buffer.getvalue())
+
+		if (mode & STREAM_WRITE == STREAM_WRITE):
+			if (not(self.mode & STREAM_WRITE)):
+				self.stream_print("WRITE ACCESS DENIED")
+				return
+			if(not(self.write_file)):
+				return
+			self.stream_print("Storing WRITE Buffer: %d Bytes"%(self.get_buffer_size(STREAM_WRITE)))
+			self.write_file_handle.write(self.write_buffer.getvalue())
+		
+	def get_buffer_size(self, mode):
+		if (mode & STREAM_READ == STREAM_READ):
+			if (not(self.mode & STREAM_READ)):
+				self.stream_print("NO READ BUFFER")
+				return
+			return self.read_buffer.getbuffer().nbytes
+
+		if (mode & STREAM_WRITE == STREAM_WRITE):
+			if (not(self.mode & STREAM_WRITE)):
+				self.stream_print("NO WRITE BUFFER")
+				return
+			return self.write_buffer.getbuffer().nbytes
+
+	def clear_buffer(self, mode):
+		if (mode & STREAM_READ == STREAM_READ):
+			if (not(self.mode & STREAM_READ)):
+				self.stream_print("NO READ BUFFER")
+				return
+			if (self.get_buffer_size(STREAM_READ) == 0):
+				return
+			self.stream_print("Clearing READ Buffer")
+			self.read_buffer.truncate(0)
+			self.read_buffer.seek(0)
+
+		if (mode & STREAM_WRITE == STREAM_WRITE):
+			if (not(self.mode & STREAM_WRITE)):
+				self.stream_print("NO WRITE BUFFER")
+				return
+			if (self.get_buffer_size(STREAM_WRITE) == 0):
+				return
+			self.stream_print("Clearing WRITE Buffer")
+			self.write_buffer.truncate(0)
+			self.write_buffer.seek(0)
+	
+	def close(self):
+		self.stream_print("RUNNING FULL CLOSE")
+		if (not(self.mode & STREAM_READ)):
+			pass
+		else:
+			self.store_buffer(STREAM_READ)
+			self.clear_buffer(STREAM_READ)
+			self.close_file(STREAM_READ)
+
+		if (not(self.mode & STREAM_WRITE)):
+			pass
+		else:
+			if (self.get_buffer_size(STREAM_WRITE) > 0):
+				self.send_packet(self.write_buffer.getvalue())
+			self.store_buffer(STREAM_WRITE)
+			self.clear_buffer(STREAM_WRITE)
+			self.close_file(STREAM_WRITE)
+
+		self.close_socket()
+	
+	def close_socket(self):
+		if (not(self.alive)):
+			return
+		self.alive = False
+		self.stream_print("Closing Socket")
+		self.socket_obj.close()
+	
+	def close_file(self, mode):
+		if (mode & STREAM_READ == STREAM_READ):
+			if (not(self.mode & STREAM_READ)):
+				self.stream_print("READ ACCESS DENIED")
+				return
+			if(not(self.read_file)):
+				return
+			self.stream_print("Closing READ File")
+			self.read_file_handle.close()
+			self.read_file = False
+
+		if (mode & STREAM_WRITE == STREAM_WRITE):
+			if (not(self.mode & STREAM_WRITE)):
+				self.stream_print("WRITE ACCESS DENIED")
+				return
+			if(not(self.write_file)):
+				return
+			self.stream_print("Closing WRITE File")
+			self.write_file_handle.close()
+			self.write_file = False
+	
+	def add_to_buffer(self, msg, mode):
+		if (mode & STREAM_READ == STREAM_READ):
+			if (not(self.mode & STREAM_READ)):
+				self.stream_print("NO READ BUFFER")
+				return
+			self.stream_print("Adding to READ Buffer")
+			self.read_buffer.write(msg)
+
+		if (mode & STREAM_WRITE == STREAM_WRITE):
+			if (not(self.mode & STREAM_WRITE)):
+				self.stream_print("NO WRITE BUFFER")
+				return
+			self.stream_print("Adding to WRITE Buffer")
+			self.write_buffer.write(msg)
+	
+	def send_packet(self, msg):
+		if (not(self.alive)):
+			return
+		transmitted = False
+		self.stream_print("Running SEND_PACKET")
+		if (not(self.mode & STREAM_WRITE)):
+			self.stream_print("WRITE ACCESS DENIED")
+		else:
+			try:
+				self.send_packet_cnt += 1
+				self.send_total_bytes += len(msg)
+				self.socket_obj.sendall(msg)
+				self.stream_print("Packet %d | Size (%d) Sent successfully"%(self.send_packet_cnt, len(msg)))
+				transmitted = True
+			except:
+				self.stream_print("ERROR Sending Message, closing socket")
+				self.log_print("ERROR Sending Message, closing socket")
+				self.close_socket()
+				
+		
+	def recv_new_packet(self):
+		if (not(self.alive)):
+			return
+		if (not(self.mode & STREAM_READ)):
+			self.stream_print("READ ACCESS DENIED")
+		else:
+			packet = self.socket_obj.recv(4096)
+			if (not(packet)):
+				self.stream_print("Stream ended, storing, then closing connection and file")
+				self.log_print("Stream ended, storing, then closing connection and file")
+				self.close_socket()
+				return
+			print("%s: New Packet | Size: %d Bytes"%(self.name, len(packet)))
+			self.read_buffer.write(packet)
+			self.recv_packet_cnt += 1
+			self.recv_total_bytes += len(packet)
+
+#================================== Serial Class =========================
+class teensy_handle:
+	
+	def __init__(self):
+		self.baudrate = 115200
+		self.serial_port = '/dev/ttyAMA0'
+		self.ser = None
+		self.status = [0,0,0] #teensy, imu, gps, alt
+		self.connected = False
+		self.alive = False
+		
+	def __bool__(self):
+		return self.alive
+
+	def connect(self):
+		connect_cnt = 0
+		while (not(self.connected)):
+			try:
+				self.ser = serial.Serial(self.serial_port, self.baudrate, timeout=0.1)
+				self.connected = True
+			except:
+				connect_cnt += 1 
+				print("Trying to Connect: Attempt #%d"%(connect_cnt))
+				if connect_cnt > 10:
+					print("Teensy not found, Unable to Connect")
+					return
+
+
+	def start_up(self):
+		if (not(self.connected)):
+			return
+		starting = False
+		print("Starting Startup")
+		for i in range(0,5):
+			print('Start_up Attempt %d'%(i))
+			self.ser.write(b'startup')
+			resp = self.ser.readline()
+			print(resp)
+			if b'starting' in resp:
+				starting = True
+				break
+		if (not(starting)):
+			print("ERROR Teensy never heard startup")
+			return
+		resp = b''
+		print("Started and waiting for initialized from teensy")
+		start = time.time()
+		while(not(b'initialized' in resp)):
+			#do error analysis of output in here
+			resp = self.ser.readline()
+			print(resp)
+			if time.time()-start > 10:
+				print("ERROR Teensy Watch Dog Timed out")
+				return
+		print("Teensy successfully started")
+		self.alive = True
+
+	def start_stream(self):
+		self.ser.write(b'dump')
+
+	def read_in_json(self):
+		try:
+			JSON_packet = self.ser.readline()
+		except:
+			print("Teensy Stream Interrupted")
+			self.alive = False
+			self.connect()
+
+		if (len(JSON_packet)):
+			print("========================= TELEMETRY ============================")
+			print("New Packet: %s"%(JSON_packet))
+			if (JSON_packet.find(b'dump_init') != -1):
+				self.alive = False
+				for i in range(0,3):
+					self.ser.write(b'startup')
+			if (JSON_packet.find(b'initialized') != -1):
+				self.ser.write(b'dump')
+				self.alive = True
+			corrupt = False
+			try:
+				JSON_obj = json.loads(JSON_packet)
+			except:
+				print("Error Creating JSON Obj; Invalid String")
+				corrupt = True
+				pass
+			if (not(corrupt)):
+				return JSON_obj
+			else:
+				return False
+		
+
 #======================= Global Variables and Objects =================
-#Global Variables
-vid_record_file = 'buffer_recording.h264' #on-board file video is stored to
+vid_record_file = store_dir + '/video_stream.h264' #on-board file video is stored to
+telem_record_file = store_dir + '/telemtry_stream.txt'
 bitrate_max = 200000 # bits per second
 record_time = 10.1 # Time in seconds that the recording runs for
-record_chunk = 0.2 #chunk size in seconds video object is broken into and sent 
+record_chunk = 0.12 #chunk size in seconds video object is broken into and sent 
 frame_rate = 15 #camera frame rate
 interrupt_bool = False #global interrupt flag that ends recording/program
 store_and_send_bool = False #global interrupt flag that initiates sending and storing of camera data
+
 
 #ensures chunk size is not smaller than one frame
 if record_chunk < 1/frame_rate:
 	record_chunk = 1/frame_rate
 
-telem_record_file = 'telemtry_stream.txt'
-baudrate = 115200
-serial_port = "/dev/ttyACM0" #USB port
-serial_port = "/dev/ttyAMA0" #UART serial pins PL011
-#serial_port = "/dev/ttyS0" #UART serial pins miniUART
-
-Camera Settings
+#Camera Settings
 camera = PiCamera()
 camera.resolution = (640, 480)
 camera.framerate = frame_rate
 
-#Network Setup
+#Network Settings
 SERVER_IP = '73.136.139.198'
+#SERVER_IP = '192.168.0.108'
 SERVER_VIDEO_PORT = 5000
 SERVER_TELEM_PORT = 5001
 
-vid_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print("RASPI CLIENT VIDEO Socket Created")
-telem_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print("RASPI CLIENT TELEMTRY Socket Created")
+video_stream = client_stream("VIDEO", SERVER_IP, SERVER_VIDEO_PORT, None, vid_record_file, STREAM_WRITE)
+telem_stream = client_stream("TELEMETRY", SERVER_IP, SERVER_TELEM_PORT, None, telem_record_file, STREAM_WRITE)
 
-connected = [False, False]
-connect_cnt = 0
-while connect_cnt < 5:
-	print("VIDEO connection attempt #%d"%(connect_cnt+1))
-	try:
-		vid_sock.connect_ex((SERVER_IP, SERVER_VIDEO_PORT))
-		print("RASPI CLIENT VIDEO Connected to COMPUTER SERVER!")
-		connected[0] = True
-		break
-	except:
-		connect_cnt += 1
-		time.sleep(0.5)
-connect_cnt = 0
-while connect_cnt < 5:
-	print("TELEMETRY connection attempt #%d"%(connect_cnt+1))
-	try:
-		telem_sock.connect_ex((SERVER_IP, SERVER_TELEM_PORT))
-		print("RASPI CLIENT TELEMTRY Connected to COMPUTER SERVER!")
-		connected[1] = True
-		break
-	except:
-		connect_cnt += 1
-		time.sleep(0.5)
-if (not(connected[0]) or not(connected[1])):
-	print("One or more socket connections failed, Exiting")
-	sys.exit()
-time.sleep(100)
 #========================= Functions =================================
 def interrupt_func():
 	#Interrupt function that ends camera streaming and program
@@ -108,9 +416,6 @@ def store_interrupt_func():
 	global store_and_send_bool
 	store_and_send_bool = True
 	#threading.Timer(record_chunk, store_interrupt_func).start()
-
-def send_network(client_sock, msg):
-	client_sock.sendall(msg)
 
 def form_packet(JSON_obj):
 	try:
@@ -134,164 +439,100 @@ def form_packet(JSON_obj):
 	
 	return packet_bytes
 
-def connect_to_teensy():
-	connect_cnt = 0
-	connected = False
-	while (not(connected)):
-		try:
-			ser = serial.Serial(serial_port, baudrate)
-			print("Teensy Connected!")
-			connected = True
-			return ser
-		except:
-			connect_cnt += 1 
-			print("Trying to Connect: Attempt #%d"%(connect_cnt))
-			time.sleep(0.5)
-			if connect_cnt == 100:
-				print("Teensy not found, Exiting")
-				sys.exit()
-#======================== Video Streaming and Recording ============
+
+	
+#======================== Video/Telemetry Streaming and Recording ============
 loop_cnt = 0.0
 cnt = 0
-#camera.start_preview()
 
-#=================== Stores to local BytesIO then sends========================
-#		    MOST EFFICENT AND TEST-PROVEN METHOD
+#Connect to Server
+video_stream.connect_to_server()
+telem_stream.connect_to_server()
 
-#Initialize Video and Telemtry Buffers
-stream = BytesIO()
-telem_buff = BytesIO()
-
-#Open and/or create onboard files to store video and telemetry
-camera_file_handle = open(vid_record_file, 'wb+')
-telem_file_handle = open(telem_record_file, 'wb+')
-
-#Connect to Teensy
-ser = connect_to_teensy()
-
-print("Beginning Stream!")
+#Connect to Teensy and do hand shake
+teensy = teensy_handle()
+teensy.connect()
+teensy.start_up()
 
 #Begin Pi Cam recording
-camera.start_recording(stream, format='h264', bitrate=bitrate_max)
-
-vid_loop_sum = 0
-vid_comms_sum = 0
-vid_store_sum = 0
-vid_max_packet = 0
-vid_max_comms = 0
-
-#Send Key word to Teensy to start dump
-ser.write(b'dump')
+camera.start_recording(video_stream.write_buffer, format='h264', bitrate=bitrate_max)
 
 #Start timer threads
 threading.Timer(record_time, interrupt_func).start()
 threading.Timer(record_chunk, store_interrupt_func).start()
 
+#Start dump of data from Teensy:
+teensy.start_stream()
+
 program_start = time.time()
 
 #Main Program Loop
 while not(interrupt_bool):
-	try:
-		JSON_packet = ser.readline()
-	except:
-		print("Teensy Stream Interrupted")
-		sys.exit()
 
-	if (len(JSON_packet)):
-		print("========================= TELEMETRY ============================")
-		print("New Packet: %s"%(JSON_packet))
-		if (JSON_packet.find(b'key word') != -1):
-			ser.write(b'dump')
-		corrupt = False
-		try:
-			JSON_obj = json.loads(JSON_packet)
-		except:
-			print("Error Creating JSON Obj; Invalid String")
-			corrupt = True
-			pass
-		if (not(corrupt)):
-			packet_Bytes = form_packet(JSON_obj)
-			if (not(packet_Bytes)):
-				print("ERROR: dirty little packet ;)")
+	new_JSON = teensy.read_in_json()
+	packet_Bytes = False
+	if (not(new_JSON)):
+		pass
+	else:
+		packet_Bytes = form_packet(new_JSON)
+		
+	if (packet_Bytes):
+		#New Telemetry Data: Add to the buffer
+		telem_stream.add_to_buffer(packet_Bytes, STREAM_WRITE)
+		
+		#If buffer gets to a certain size, send and store
+		packet_size = len(packet_Bytes)
+		if (telem_stream.get_buffer_size(STREAM_WRITE)/packet_size > 10):
+			#Send Buffer over Network
+			if (telem_stream):
+				telem_stream.send_packet(telem_stream.write_buffer.getvalue())
 			else:
-				#telem_buff.write(packet_Bytes)
-				packet_size = len(packet_Bytes)
-				print("Current Packet | Size(%d):"%(packet_size))
-				#print(packet_Bytes)
-				telem_buff.write(packet_Bytes)
-				telem_buff_size = telem_buff.getbuffer().nbytes
-				print("Buffer | Size(%d):"%(telem_buff_size))
-				if (telem_buff_size/packet_size >= 10):
-					#Buffer Contains 10 telem Packets; store send and clear buffer
+				telem_stream.connect_to_server()
+			
+			#Store Buffer to File
+			telem_stream.store_buffer(STREAM_WRITE)
+			
+			#Clear Buffer
+			telem_stream.clear_buffer(STREAM_WRITE)
+		
 
-					#Store to file
-					telem_file_handle.write(telem_buff.getvalue())
-					
-					#Send over the network
-					send_network(telem_sock, telem_buff.getvalue())
-					
-					#Clear and Reset Buffer
-					telem_buff.truncate(0)
-					telem_buff.seek(0)
-					print("Send and Saved %d Telemtry Bytes"%(telem_buff_size))
-	
 	#Camera Store and Send
 	if (store_and_send_bool):
-		print("========================= CAMERA ============================")
+		#Reset Timer
 		threading.Timer(record_chunk, store_interrupt_func).start()
-		loop_start = time.time()
-		#executes when record_chunk thread times out
-		#controls how often data is ported ofver the network and to file
-		#change 'record_chunk' to vary time and data size
-		
+
 		#Reset global interrupt flag
 		store_and_send_bool = False
 		
-		#Get Buffer Size:
-		buff_size = stream.getbuffer().nbytes
+		#Send Video Data over Network
+		if (video_stream):
+			video_stream.send_packet(video_stream.write_buffer.getvalue())
+		else:
+			video_stream.connect_to_server()
 
-		#Send bytes-like date over the Network (UDP)
-		comms_start = time.time()
-		send_network(vid_sock, stream.getvalue())
-		comms_time = (time.time()-comms_start)
-		vid_comms_sum += comms_time		
+		#Store Data to File
+		video_stream.store_buffer(STREAM_WRITE)
+
+		#Clear Buffer
+		video_stream.clear_buffer(STREAM_WRITE)
 		
-		#Store bytes-like data to file 
-		store_start = time.time()
-		camera_file_handle.write(stream.getvalue())
-		vid_store_sum += (time.time()-store_start)
 
-		#Clear local file-like object
-		stream.truncate(0)
-		stream.seek(0)
-
-		#[Optional] Print Diagnostic printout
-		cnt+=1
-		print("Sent and Saved Chunk #%d | Loop Time: %f"%(cnt, (time.time()-loop_start)))
-		#print("\tComms Time: %fs"%(vid_comms_time))
-		print("\tData Size: %d Bytes | %d bits"%(buff_size, buff_size*8))
-		#print("\tApparent Data Rate: %d kbps"%(float(buff_size*8)/(vid_comms_time*1000)))
-		if buff_size > vid_max_packet:
-			vid_max_packet = buff_size
-		if comms_time > vid_max_comms:
-			vid_max_comms = comms_time
-		vid_loop_sum+=(time.time() - loop_start)
 #======================================================================================
 
 #End Recording and Tidy Up
-total_time = time.time() - program_start 
-print("\n\nClosing Connection")
-vid_sock.close()
-telem_sock.close()
-print("Disconnecting from Teensy")
-ser.close()
-print("Ending Recording")
-camera.stop_recording()
-print("Closing Record Files")
-camera_file_handle.close()
-telem_file_handle.close()
-print("Program Time:  %fs"%(total_time))
-print("Video Process Time:  %fs | Video Process Usage: %f%%"%(vid_loop_sum, (vid_loop_sum*100)/total_time))
-print("\tComms: %fs | %f%%\n\tStore: %fs | %f%%"%(vid_comms_sum, (vid_comms_sum*100)/vid_loop_sum, vid_store_sum,(vid_store_sum*100)/vid_loop_sum))
-print("\tStream Metrics:\n\t\tMax Packet Size: %d Bytes\n\t\tMax Send Time  : %f ms"%(vid_max_packet, vid_max_comms*1000))
+total_time = time.time() - program_start
+log_start("Stream Ended, Closing sockets and files")
+video_stream.close()
+telem_stream.close()
+
+video_stream.print_statistics()
+telem_stream.print_statistics()
+
+absolute_tm = time.localtime()
+time_str = "\nScript Ended at " + str(absolute_tm[3]) + ":" + str(absolute_tm[4]) + ":" + str(absolute_tm[5])
+time_str += " on " + str(absolute_tm[1]) + "/" + str(absolute_tm[2]) + "/" + str(absolute_tm[0])
+
+log_handle.write(time_str)
+
+log_handle.close() 
 
