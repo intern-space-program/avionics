@@ -499,13 +499,6 @@ def store_interrupt_func():
 	store_and_send_bool = True
 	#threading.Timer(record_chunk, store_interrupt_func).start()
 
-def send_network(client_sock, msg):
-	try:
-		client_sock.sendall(msg)
-	except:
-		log_start("Error Sending Message Over Network")
-		log_start("Closing Socket")
-		client_sock.close()
 
 #======================= Global Variables and Objects =================
 #Global Variables
