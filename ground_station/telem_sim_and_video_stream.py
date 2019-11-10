@@ -1,3 +1,4 @@
+
 # This script does the following:
 #	1) Record H264 Video using PiCam at a maximum bitrate of {bitrate_max} kbps
 #	2) Record video data to a local BytesIO object
@@ -45,6 +46,21 @@ store_dir = home + "/rocket_data"
 cmd = "mkdir " + store_dir
 os.system(cmd)
 
+log_file = store_dir + "/startup_log.txt"
+log_handle = open(log_file, 'w')
+
+def get_time():
+	absolute_tm = time.localtime()
+	return str(absolute_tm[3]) + ":" + str(absolute_tm[4]) + ":" + str(absolute_tm[5]) + "| "
+
+def log_start(msg):
+	log_handle.write(("\n" + get_time() + msg))
+
+absolute_tm = time.localtime()
+time_str = "Script Started at " + str(absolute_tm[3]) + ":" + str(absolute_tm[4]) + ":" + str(absolute_tm[5])
+time_str += " on " + str(absolute_tm[1]) + "/" + str(absolute_tm[2]) + "/" + str(absolute_tm[0])
+
+log_handle.write(time_str)
 
 #======================= TRAJECTORY SIMULATION CODE =================
 
@@ -281,6 +297,7 @@ camera.framerate = frame_rate
 
 #Network Setup
 SERVER_IP = '73.136.139.198'
+SERVER_IP = '192.168.1.115'
 SERVER_VIDEO_PORT = 5000
 SERVER_TELEM_PORT = 5001
 
@@ -288,6 +305,8 @@ vid_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print("RASPI CLIENT VIDEO Socket Created")
 telem_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print("RASPI CLIENT TELEMTRY Socket Created")
+
+log_start("Sockets Objects Created")
 
 connected = [False, False]
 connect_cnt = 0
@@ -315,6 +334,7 @@ while connect_cnt < 5:
 if (not(connected[0]) or not(connected[1])):
 	print("One or more socket connections failed, Exiting")
 	sys.exit()
+log_start("Sockets Connected to Server")
 
 #========================= Functions =================================
 def interrupt_func():
@@ -348,6 +368,7 @@ telem_buff = BytesIO()
 camera_file_handle = open(vid_record_file, 'wb+')
 telem_file_handle = open(telem_record_file, 'wb+')
 
+log_start("Beginning Stream!")
 print("Beginning Stream!")
 
 #Begin Pi Cam recording
@@ -445,7 +466,8 @@ while test_rocket:
 #======================================================================================
 
 #End Recording and Tidy Up
-total_time = time.time() - program_start 
+total_time = time.time() - program_start
+log_start("Stream Ended and Sockets Closed")
 print("\n\nClosing Connection")
 vid_sock.close()
 telem_sock.close()
@@ -459,4 +481,12 @@ print("Video Process Time:  %fs | Video Process Usage: %f%%"%(vid_loop_sum, (vid
 print("\tComms: %fs | %f%%\n\tStore: %fs | %f%%"%(vid_comms_sum, (vid_comms_sum*100)/vid_loop_sum, vid_store_sum,(vid_store_sum*100)/vid_loop_sum))
 print("\tStream Metrics:\n\t\tMax Packet Size: %d Bytes\n\t\tMax Send Time  : %f ms\n"%(vid_max_packet, vid_max_comms*1000))
 test_rocket.print_flight_metrics()
+
+absolute_tm = time.localtime()
+time_str = "\nScript Ended at " + str(absolute_tm[3]) + ":" + str(absolute_tm[4]) + ":" + str(absolute_tm[5])
+time_str += " on " + str(absolute_tm[1]) + "/" + str(absolute_tm[2]) + "/" + str(absolute_tm[0])
+
+log_handle.write(time_str)
+
+log_handle.close() 
 
