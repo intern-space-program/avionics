@@ -14,9 +14,7 @@ def get_user_input(vid_sock, telem_sock):
 		new_input = input("")
 		new_input = str(new_input)
 		if new_input.find("vid") != -1:
-			print("Input Before Replace: %s"%(new_input))
 			new_input = new_input.replace("vid", "")
-			print("Input After Replace: %s"%(new_input))
 			if new_input.find("kill") != -1:
 				vid_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
@@ -24,9 +22,7 @@ def get_user_input(vid_sock, telem_sock):
 				vid_sock.sendall(new_input.encode('utf-8'))
 				print("Message sent on VIDEO socket")
 		elif new_input.find("telem") != -1:
-			print("Input Before Replace: %s"%(new_input))
 			new_input = new_input.replace("telem", "")
-			print("Input After Replace: %s"%(new_input))
 			if new_input.find("kill") != -1:
 				telem_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
@@ -62,7 +58,7 @@ while vid_sock_alive or telem_sock_alive:
 	events = sel.select(timeout=0.1)#BLOCKING, can set timeout to not block
 	for key, mask in events:
 		socket_obj = key.fileobj
-		if key.data is not(None) and mask == selectors.EVENT_READ:
+		if key.data is not(None) and mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
 			if key.data == 'VIDEO':
 				if vid_sock_alive:
 					new_data = socket_obj.recv(4096)

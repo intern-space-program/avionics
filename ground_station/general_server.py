@@ -364,7 +364,7 @@ while video_stream or telem_stream:
 			if socket_obj == telem_stream.server_socket:
 				telem_stream.handle_connection(sel)
 
-		if key.data is not(None) and mask == selectors.EVENT_READ:
+		if key.data is not(None) and mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
 			socket_obj = key.fileobj
 			if (key.data == video_stream.server_socket and video_stream):
 				video_stream.recv_new_packet(socket_obj, sel)
