@@ -289,8 +289,8 @@ class teensy_handle:
 	
 	def __init__(self):
 		self.baudrate = 115200
-		self.serial_port = '/dev/ttyACM0' #USB serial
-		#self.serial_port = '/dev/ttyAMA0' #Serial pins TX/RX -> 14/15
+		#self.serial_port = '/dev/ttyACM0' #USB serial
+		self.serial_port = '/dev/ttyAMA0' #Serial pins TX/RX -> 14/15
 		self.ser = None
 		self.status = [0,0,0] #teensy, imu, gps, alt
 		self.connected = False
