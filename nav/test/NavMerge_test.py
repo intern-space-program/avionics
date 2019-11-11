@@ -133,6 +133,10 @@ def merge_attitude_test():
 
 
 def merge_main_test():
+    '''
+    This test is covered by the overall integration test found in
+    NavMain_test.py.
+    '''
     pass
 
 
