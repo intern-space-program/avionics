@@ -38,7 +38,7 @@ def merge_position(prev_position, prev_velocity, dt, accel_merged, gps, altitude
     For parameter descriptions, see merge_main function.
     '''
     p_new_calc = prev_position + prev_velocity*dt + 0.5*accel_merged*dt**2
-    # TODO: add better weighting based on sensor error
+    # TODO: add weighting based on sensor error if data becomes available
     z_merged = weighted_avg(values=[altitude, gps[2]], weights=[1, 1])
     p_new_est = np.array([gps[0], gps[1], z_merged])
 
