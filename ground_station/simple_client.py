@@ -8,29 +8,45 @@ telem_sock_alive = True
 vid_sock_alive = True
 
 def get_user_input(vid_sock, telem_sock):
-	global telem_sock_alive
-	global vid_sock_alive
-	while vid_sock_alive or telem_sock_alive:
+	telem_sock_al = True
+	vid_sock_al = True
+	while vid_sock_al or telem_sock_al:
 		new_input = input("")
-		new_input = new_input.decode('utf-8')
 		if new_input.find("vid") != -1:
 			new_input = new_input.replace("vid", "")
 			if new_input.find("kill") != -1:
 				vid_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
+				vid_sock_al = False
 			else:
-				vid_sock.sendall(new_input.encode('utf-8'))
-				print("Message sent on VIDEO socket")
+				try:
+					vid_sock.sendall(new_input.encode('utf-8'))
+					print("Message sent on VIDEO socket")
+				except:
+					vid_sock_al = False
+					
 		elif new_input.find("telem") != -1:
 			new_input = new_input.replace("telem", "")
 			if new_input.find("kill") != -1:
 				telem_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
+				telem_sock_al = False
 			else:
-				telem_sock.sendall(new_input.encode('utf-8'))
-				print("Message sent on TELEMETRY socket")
+				try:
+					telem_sock.sendall(new_input.encode('utf-8'))
+					print("Message sent on TELEMETRY socket")
+				except:
+					telem_sock_al = False
 		else:
 			print("Invalid Command: please include 'vid' or 'telem' in message")
+	try:
+		vid_sock.close()
+	except:
+		pass
+	try:
+		telem_sock.close()
+	except:
+		pass
 	
 
 SERVER_IP = '10.0.0.178'
@@ -69,7 +85,7 @@ while vid_sock_alive or telem_sock_alive:
 						vid_sock_alive = False
 
 					else:
-						new_data = str(new_data)
+						new_data = new_data.decode('utf-8')
 						if "KILL STREAM" in new_data:
 							print("%s: Kill switch received; Closing socket"%(key.data))
 							sel.unregister(socket_obj)
@@ -85,7 +101,7 @@ while vid_sock_alive or telem_sock_alive:
 
 			if key.data == 'TELEMETRY':
 				if telem_sock_alive:
-					new_data = str(socket_obj.recv(4096))
+					new_data = new_data.decode('utf-8')
 					if not(new_data):
 						print("%s: Pipe Broken, closing socket"%(key.data))
 						sel.unregister(socket_obj)
