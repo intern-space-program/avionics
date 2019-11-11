@@ -89,17 +89,17 @@ class server_stream:
 		cnt = 0
 		for sockets in undeclared_sockets:
 			cnt += 1
-			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname[0], sockets.getsockname[1]))
+			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
 		self.stream_print("SINK Sockets:       %d"%(len(self.sink_sockets)))
 		cnt = 0
 		for sockets in sink_sockets:
 			cnt += 1
-			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname[0], sockets.getsockname[1]))
+			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
 		self.stream_print("SRC Sockets:        %d"%(len(self.src_sockets)))
 		cnt = 0
 		for sockets in src_sockets:
 			cnt += 1
-			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname[0], sockets.getsockname[1]))
+			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
 
 	def claim_socket(self, socket_obj):
 		for socket in self.undeclared_sockets:
@@ -287,7 +287,7 @@ class server_stream:
 		data_packet = str(data_packet)
 		if (not(data_packet)):
 			#Data is empty; socket closed by them
-			self.stream_print("Empty data recieved, closing socket to (%s, %d)"%(socket_obj.getsockname[0], socket_obj.getsockname[1]))
+			self.stream_print("Empty data recieved, closing socket to (%s, %d)"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
 			self.close_socket(socket_obj, selector_obj)
 			self.print_state()
 			return
@@ -301,18 +301,18 @@ class server_stream:
 		#Data is not empty or kill switch. Check to see where data came from and where it should go
 		if socket_obj in self.undeclared_sockets:
 			if "sink" in data_packet:
-				self.stream_print("Undeclared Socket (%s, %d) registering as SINK"%(socket_obj.getsockname[0], socket_obj.getsockname[1]))
+				self.stream_print("Undeclared Socket (%s, %d) registering as SINK"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
 				self.undeclared_sockets.remove(socket_obj)
 				self.sink_sockets.append(socket_obj)
 				self.print_state()
 				
 			elif "src" in data_packet:
-				self.stream_print("Undeclared Socket (%s, %d) registering as SRC"%(socket_obj.getsockname[0], socket_obj.getsockname[1]))
+				self.stream_print("Undeclared Socket (%s, %d) registering as SRC"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
 				self.undeclared_sockets.remove(socket_obj)
 				self.src_sockets.append(socket_obj)
 				self.print_state()
 			else:
-				self.stream_print("UNRECOGNIZED DATA FROM UNDECLARED SOCKET (%s, %d)"%(socket_obj.getsockname[0], socket_obj.getsockname[1]))
+				self.stream_print("UNRECOGNIZED DATA FROM UNDECLARED SOCKET (%s, %d)"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
 			return
 			
 		if socket_obj in self.sink_sockets:
