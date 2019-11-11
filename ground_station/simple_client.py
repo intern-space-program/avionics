@@ -101,7 +101,7 @@ while vid_sock_alive or telem_sock_alive:
 
 			if key.data == 'TELEMETRY':
 				if telem_sock_alive:
-					new_data = new_data.decode('utf-8')
+					new_data = socket_obj.recv(4096)
 					if not(new_data):
 						print("%s: Pipe Broken, closing socket"%(key.data))
 						sel.unregister(socket_obj)
@@ -110,7 +110,7 @@ while vid_sock_alive or telem_sock_alive:
 
 
 					else:
-						new_data = str(new_data)
+						new_data = new_data.decode('utf-8')
 						if "KILL STREAM" in new_data:
 							print("%s: Kill switch received; Closing socket"%(key.data))
 							sel.unregister(socket_obj)
