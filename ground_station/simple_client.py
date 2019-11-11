@@ -12,7 +12,7 @@ def get_user_input(vid_sock, telem_sock):
 	global vid_sock_alive
 	while vid_sock_alive or telem_sock_alive:
 		new_input = input("")
-		new_input = str(new_input)
+		new_input = new_input.decode('utf-8')
 		if new_input.find("vid") != -1:
 			new_input = new_input.replace("vid", "")
 			if new_input.find("kill") != -1:
@@ -58,11 +58,10 @@ while vid_sock_alive or telem_sock_alive:
 	events = sel.select(timeout=0.1)#BLOCKING, can set timeout to not block
 	for key, mask in events:
 		socket_obj = key.fileobj
-		if key.data is not(None) and mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
+		if key.data is not(None) and mask == selectors.EVENT_READ|selectors.EVENT_WRITE:
 			if key.data == 'VIDEO':
 				if vid_sock_alive:
 					new_data = socket_obj.recv(4096)
-					new_data = str(new_data)
 					if not(new_data):
 						print("%s: Pipe Broken, closing socket"%(key.data))
 						sel.unregister(socket_obj)
@@ -70,6 +69,7 @@ while vid_sock_alive or telem_sock_alive:
 						vid_sock_alive = False
 
 					else:
+						new_data = str(new_data)
 						if "KILL STREAM" in new_data:
 							print("%s: Kill switch received; Closing socket"%(key.data))
 							sel.unregister(socket_obj)
@@ -94,6 +94,7 @@ while vid_sock_alive or telem_sock_alive:
 
 
 					else:
+						new_data = str(new_data)
 						if "KILL STREAM" in new_data:
 							print("%s: Kill switch received; Closing socket"%(key.data))
 							sel.unregister(socket_obj)

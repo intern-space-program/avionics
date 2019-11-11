@@ -286,16 +286,17 @@ class server_stream:
 		if (not(self.alive)):
 			return
 		data_packet = socket_obj.recv(4096)
-		data_packet = str(data_packet)
 		if (not(data_packet)):
 			#Data is empty; socket closed by them
 			self.stream_print("Empty data recieved, closing socket to (%s, %d)"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
 			self.close_socket(socket_obj, selector_obj)
 			self.print_state()
 			return
+		data_packet = data_packet.decode('utf-8')
 		if "KILL STREAM" in data_packet:
 			#kill switch for whole network -> ends Server and all clients
 			self.stream_print("KILL SWITCH RECIEVED. NOTIFYING ALL SINKS AND SOURCES")
+			self.mode = DUPLEX
 			self.send_packet(data_packet.encode('utf-8'), SRC2SINK, selector_obj)
 			self.send_packet(data_packet.encode('utf-8'), SINK2SRC, selector_obj)
 			self.close()
@@ -364,7 +365,7 @@ while video_stream or telem_stream:
 			if socket_obj == telem_stream.server_socket:
 				telem_stream.handle_connection(sel)
 
-		if key.data is not(None) and mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
+		if key.data is not(None) and mask == selectors.EVENT_READ|selectors.EVENT_WRITE:
 			socket_obj = key.fileobj
 			if (key.data == video_stream.server_socket and video_stream):
 				video_stream.recv_new_packet(socket_obj, sel)
