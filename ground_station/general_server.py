@@ -336,10 +336,10 @@ while video_stream or telem_stream:
 
 		if key.data is not(None) and mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
 			socket_obj = key.fileobj
-			if (key.data == video_stream.sever_socket and video_stream):
+			if (key.data == video_stream.server_socket and video_stream):
 				video_stream.recv_new_packet(socket_obj, sel)
 
-			if (name_source(socket_obj) == 'TELEMETRY' and telem_stream):
+			if (key.data == telem_stream.server_socket and telem_stream):
 				telem_stream.recv_new_packet(socket_obj, sel)
 				
 
