@@ -12,25 +12,26 @@ def get_user_input(vid_sock, telem_sock):
 	global vid_sock_alive
 	while vid_sock_alive or telem_sock_alive:
 		new_input = input("Waiting for user input (specify 'vid' or 'telem' in message):\n")
-		if new_input.find(b'vid') != -1:
-			new_input.replace(b'vid', b'')
-			if new_input.find(b'kill') != -1:
+		new_input = str(new_input)
+		if new_input.find("vid") != -1:
+			new_input.replace("vid", '')
+			if new_input.find("kill") != -1:
 				vid_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
 				vid_sock_alive = False
 				vid_sock.close()
 			else:
-				vid_sock.sendall(new_input)
+				vid_sock.sendall(new_input.encode('utf-8'))
 				print("Message sent on VIDEO socket")
-		elif new_input.find(b'telem') != -1:
-			new_input.replace(b'vid', b'')
-			if new_input.find(b'kill') != -1:
+		elif new_input.find("telem") != -1:
+			new_input.replace("vid", '')
+			if new_input.find("kill") != -1:
 				telem_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
 				telem_sock_alive = False
 				vid_sock.close()
 			else:
-				telem_sock.sendall(new_input)
+				telem_sock.sendall(new_input.encode('utf-8'))
 				print("Message sent on TELEMETRY socket")
 		else:
 			print("Invalid Command: please include 'vid' or 'telem' in message")
