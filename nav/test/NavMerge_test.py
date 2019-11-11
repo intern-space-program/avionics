@@ -24,10 +24,8 @@ def merge_accel_test_null():
     ret = merge_accel(prev_position, accel_nc, accel_c)
 
     # results
-    if allclose(ret, exp, atol=0.001):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def merge_accel_test_values():
@@ -46,10 +44,8 @@ def merge_accel_test_values():
     ret = merge_accel(prev_position, accel_nc, accel_c)
 
     # results
-    if allclose(ret, exp, atol=0.01):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def merge_position_test_null():
@@ -69,10 +65,8 @@ def merge_position_test_null():
     ret = merge_position(prev_position, prev_velocity, dt, accel_merged, gps, altitude)
 
     # results
-    if allclose(ret, exp, atol=0.001):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def merge_position_test_values():
@@ -92,10 +86,8 @@ def merge_position_test_values():
     ret = merge_position(prev_position, prev_velocity, dt, accel_merged, gps, altitude)
 
     # results
-    if allclose(ret, exp, atol=0.01):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def merge_velocity_test_null():
@@ -112,10 +104,8 @@ def merge_velocity_test_null():
     ret = merge_velocity(prev_velocity, dt, accel_merged)
 
     # results
-    if allclose(ret, exp, atol=0.001):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def merge_velocity_test_values():
@@ -132,10 +122,8 @@ def merge_velocity_test_values():
     ret = merge_velocity(prev_velocity, dt, accel_merged)
 
     # results
-    if allclose(ret, exp, atol=0.01):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def merge_attitude_test():
