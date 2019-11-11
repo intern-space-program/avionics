@@ -33,7 +33,10 @@ def qnorm(q):
     '''
     Normalize a quaternion.
     '''
-    return q/norm(q)
+    if norm(q) != 0.0:
+        return q/norm(q)
+    else:
+        return array([0.0, 0.0, 0.0, 0.0])
 
 
 def qvectransform(q, v):
