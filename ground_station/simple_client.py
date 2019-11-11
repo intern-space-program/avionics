@@ -56,9 +56,10 @@ message_send.start()
 while vid_sock_alive or telem_sock_alive:
 	events = sel.select(timeout=0.1)#BLOCKING, can set timeout to not block
 	for key, mask in events:
-		socket_obj = key.file_obj
+		#socket_obj = key.file_obj
 		if key.data is not(None) and mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
 			if key.data == 'VIDEO':
+				socket_obj = client_vid_sock
 				if vid_sock_alive:
 					new_data = socket_obj.recv(4096)
 					if not(new_data):
@@ -66,22 +67,23 @@ while vid_sock_alive or telem_sock_alive:
 						sel.unregister(socket_obj)
 						socket_obj.close()
 						vid_sock_alive = False
-							
-						
+
 					else:
 						if "KILL STREAM" in new_packet:
 							print("%s: Kill switch received; Closing socket"%(key.data))
-					 		sel.unregister(socket_obj)
+							sel.unregister(socket_obj)
 							socket_obj.close()
 							vid_sock_alive = False
 						else:
 							print("%s: %s"%(key.data, new_data))
-					
+
+
 				else:
 					sel.unregister(socket_obj)
 					socket_obj.close()
 
-			if key.data == 'TELEMETRY'
+			if key.data == 'TELEMETRY':
+				socket_obj = client_telem_sock
 				if telem_sock_alive:
 					new_data = socket_obj.recv(4096)
 					if not(new_data):
@@ -89,18 +91,18 @@ while vid_sock_alive or telem_sock_alive:
 						sel.unregister(socket_obj)
 						socket_obj.close()
 						telem_sock_alive = False
-							
-						
+
+
 					else:
 						if "KILL STREAM" in new_packet:
 							print("%s: Kill switch received; Closing socket"%(key.data))
-					 		sel.unregister(socket_obj)
+							sel.unregister(socket_obj)
 							socket_obj.close()
 							telem_sock_alive = False
 						else:
 							print("%s: %s"%(key.data, new_data))
-					
-					
+
+
 				else:
 					sel.unregister(socket_obj)
 					socket_obj.close()
