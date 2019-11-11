@@ -174,7 +174,7 @@ class server_stream:
 			if(not(self.downstream_file)):
 				return
 			self.stream_print("Closing DOWNSTREAM File")
-			self.src2sink_handle.close()
+			self.src2sink_file_handle.close()
 			self.downstream_file = False
 
 		if (mode & SINK2SRC == SINK2SRC):
@@ -184,7 +184,7 @@ class server_stream:
 			if(not(self.upstream_file)):
 				return
 			self.stream_print("Closing UPSTREAM File")
-			self.sink2src_handle.close()
+			self.sink2src_file_handle.close()
 			self.upstream_file = False
 
 	def store_buffer(self, mode):
@@ -364,7 +364,7 @@ while video_stream or telem_stream:
 			if socket_obj == telem_stream.server_socket:
 				telem_stream.handle_connection(sel)
 
-		if key.data is not(None) and mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
+		if key.data is not(None) and mask == selectors.EVENT_READ:
 			socket_obj = key.fileobj
 			if (key.data == video_stream.server_socket and video_stream):
 				video_stream.recv_new_packet(socket_obj, sel)
