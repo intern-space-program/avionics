@@ -18,18 +18,14 @@ def get_user_input(vid_sock, telem_sock):
 			if new_input.find("kill") != -1:
 				vid_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
-				vid_sock_alive = False
-				vid_sock.close()
 			else:
 				vid_sock.sendall(new_input.encode('utf-8'))
 				print("Message sent on VIDEO socket")
 		elif new_input.find("telem") != -1:
-			new_input.replace("vid", '')
+			new_input.replace("telem", '')
 			if new_input.find("kill") != -1:
 				telem_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
-				telem_sock_alive = False
-				vid_sock.close()
 			else:
 				telem_sock.sendall(new_input.encode('utf-8'))
 				print("Message sent on TELEMETRY socket")
