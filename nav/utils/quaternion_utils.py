@@ -53,4 +53,4 @@ def qconjugate(q):
     Get the conjugate of a quaternion. This is equal to
     the inverse for unit quaternions.
     '''
-    return concatenate([array([q[3]]), -1*q[1:]])
+    return concatenate([array([q[0]]), -1*q[1:]])
