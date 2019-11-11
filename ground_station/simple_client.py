@@ -32,7 +32,7 @@ def get_user_input(vid_sock, telem_sock):
 			print("Invalid Command: please include 'vid' or 'telem' in message")
 	
 
-SERVER_IP = ''
+SERVER_IP = '10.0.0.178'
 SERVER_VIDEO_PORT = 5000
 SERVER_TELEM_PORT = 5001
 
