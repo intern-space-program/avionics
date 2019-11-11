@@ -68,7 +68,7 @@ while vid_sock_alive or telem_sock_alive:
 						vid_sock_alive = False
 
 					else:
-						if "KILL STREAM" in new_data:
+						if b'KILL STREAM' in new_data:
 							print("%s: Kill switch received; Closing socket"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
@@ -92,7 +92,7 @@ while vid_sock_alive or telem_sock_alive:
 
 
 					else:
-						if "KILL STREAM" in new_data:
+						if b'KILL STREAM' in new_data:
 							print("%s: Kill switch received; Closing socket"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
