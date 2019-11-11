@@ -33,7 +33,7 @@ def merge_accel_test_null():
 
 def merge_accel_test_values():
     # setup
-    description = 'merge_accel_test_values - Test merge_accel with value inputs'
+    description = 'merge_accel_test_values - Test merge_accel with non-zero inputs'
     prev_position = array([1.73205, 1.73205, 1.73205])
     accel_nc = array([0.0, 0.0, 0.0])
     accel_c = array([0.0, 0.0, 0.0])
@@ -53,8 +53,50 @@ def merge_accel_test_values():
         return FAIL, description
 
 
-def merge_position_test():
-    pass
+def merge_position_test_null():
+    # setup
+    description = 'merge_position_test_null - Test merge_position with zeroed-out inputs'
+    prev_position = array([0.0, 0.0, 0.0])
+    prev_velocity = array([0.0, 0.0, 0.0])
+    dt = 0.0
+    accel_merged = array([0.0, 0.0, 0.0])
+    gps = array([0.0, 0.0, 0.0])
+    altitude = 0.0
+
+    # expected results
+    exp = array([0.0, 0.0, 0.0])
+
+    # unit test
+    ret = merge_position(prev_position, prev_velocity, dt, accel_merged, gps, altitude)
+
+    # results
+    if allclose(ret, exp, atol=0.001):
+        return PASS, description
+    else:
+        return FAIL, description
+
+
+def merge_position_test_values():
+    # setup
+    description = 'merge_position_test_values - Test merge_position with non-zero inputs'
+    prev_position = array([1.0, 1.0, 1.0])
+    prev_velocity = array([1.0, 1.0, 1.0])
+    dt = 0.1
+    accel_merged = array([5.0, 5.0, 5.0])
+    gps = array([1.2, 1.2, 1.2])
+    altitude = 1.1
+
+    # expected results
+    exp = array([1.1625, 1.1625, 1.1375])
+
+    # unit test
+    ret = merge_position(prev_position, prev_velocity, dt, accel_merged, gps, altitude)
+
+    # results
+    if allclose(ret, exp, atol=0.01):
+        return PASS, description
+    else:
+        return FAIL, description
 
 
 def merged_velocity_test():
@@ -73,7 +115,9 @@ def merge_main_test():
 def main():
     tests = [
         merge_accel_test_null,
-        merge_accel_test_values
+        merge_accel_test_values,
+        merge_position_test_null,
+        merge_position_test_values
     ]
 
     passed = 0
