@@ -326,7 +326,7 @@ telem_stream = server_stream('TELEMETRY',SERVER_IP, SERVER_TELEM_PORT, sel, tele
 while video_stream or telem_stream:
 	events = sel.select(timeout=0.1)#BLOCKING, can set timeout to not block
 	for key, mask in events:
-		socket_obj = key.file_obj
+		socket_obj = key.fileobj
 		if key.data is None:
 			print("CONNECTION ATTEMPT")
 			if socket_obj == video_stream.server_socket:
