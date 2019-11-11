@@ -265,14 +265,15 @@ class server_stream:
 		if (not(self.alive)):
 			return
 		data_packet = socket_obj.recv(4096)
+		data_packet = str(data_packet)
 		if (not(data_packet)):
 			#Data is empty; socket closed by them
 			self.close_socket(socket_obj, selector_obj)
 			return
 		if "KILL STREAM" in data_packet:
 			#kill switch for whole network -> ends Server and all clients
-			self.send_packet(data_packet, SRC2SINK, selector_obj)
-			self.send_packet(data_packet, SINK2SRC, selector_obj)
+			self.send_packet(data_packet.encode('utf-8'), SRC2SINK, selector_obj)
+			self.send_packet(data_packet.encode('utf-8'), SINK2SRC, selector_obj)
 			self.close()
 
 		#Data is not empty or kill switch. Check to see where data came from and where it should go
@@ -289,8 +290,8 @@ class server_stream:
 			
 		if socket_obj in self.sink_sockets:
 			direction = SINK2SRC
-			self.add_to_buffer(data_packet, direction)
-			self.send_packet(data_packet, direction, selector_obj)
+			self.add_to_buffer(data_packet.encode('utf-8'), direction)
+			self.send_packet(data_packet.encode('utf-8'), direction, selector_obj)
 			if (self.get_buffer_size(direction) > self.buffer_thresh):
 				self.store_buffer(direction)
 				self.clear_buffer(direction)
@@ -298,8 +299,8 @@ class server_stream:
 
 		if socket_obj in self.src_sockets:
 			direction = SRC2SINK
-			self.add_to_buffer(data_packet, direction)
-			self.send_packet(data_packet, direction, selector_obj)
+			self.add_to_buffer(data_packet.encode('utf-8'), direction)
+			self.send_packet(data_packet.encode('utf-8'), direction, selector_obj)
 			if (self.get_buffer_size(direction) > self.buffer_thresh):
 				self.store_buffer(direction)
 				self.clear_buffer(direction)
