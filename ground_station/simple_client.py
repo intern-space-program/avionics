@@ -12,18 +12,18 @@ def get_user_input(vid_sock, telem_sock):
 	global vid_sock_alive
 	while vid_sock_alive or telem_sock_alive:
 		new_input = input("Waiting for user input (specify 'vid' or 'telem' in message):\n")
-		if 'vid' in new_input:
-			new_input.replace('vid', '')
-			if 'kill' in new_input:
-				vid_sock.sendall("KILL STREAM")
+		if b'vid' in new_input:
+			new_input.replace(b'vid', b'')
+			if b'kill' in new_input:
+				vid_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
 			else:
 				vid_sock.sendall(new_input)
 				print("Message sent on VIDEO socket")
-		elif 'telem' in new_input:
-			new_input.replace('vid', '')
+		elif b'telem' in new_input:
+			new_input.replace(b'vid', b'')
 			if 'kill' in new_input:
-				telem_sock.sendall("KILL STREAM")
+				telem_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
 			else:
 				telem_sock.sendall(new_input)

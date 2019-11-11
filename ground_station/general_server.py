@@ -102,7 +102,7 @@ class server_stream:
 		data = self.server_socket #make the client events identifiable by its server socket
 		events = selectors.EVENT_READ | selectors.EVENT_WRITE
 		selector_obj.register(client_sock, events, data=data)
-		client_sock.sendall("Please register as 'sink' or 'src'")
+		client_sock.sendall(b'Please register as "sink" or "src"')
 		
 
 	def close(self):
