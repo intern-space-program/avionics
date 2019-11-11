@@ -10,7 +10,7 @@ import nav.NavMerge
 import nav.NavFilter
 
 
-def NavMain(prev_state, sensor_data):
+def main(prev_state, sensor_data):
     '''
     Manages entire navigation functionality from
     reception of raw sensor data to outputted
