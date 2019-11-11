@@ -26,7 +26,7 @@ def qcomp(q1, q2):
     v = q1s*q2v + q2s*q1v - cross(q1v, q2v)
     s = array([q1s*q2s - dot(q2v, q1v)])
 
-    return concatenate([v, s])
+    return concatenate([s, v])
 
 
 def qnorm(q):
@@ -45,7 +45,7 @@ def qvectransform(q, v):
     '''
     qvec = concatenate([v, array([0])])
     transformed = qcomp(q, qcomp(qvec, qconjugate(q)))
-    return transformed[0:3]
+    return transformed[1:]
 
 
 def qconjugate(q):
@@ -53,4 +53,4 @@ def qconjugate(q):
     Get the conjugate of a quaternion. This is equal to
     the inverse for unit quaternions.
     '''
-    return concatenate([-1*q[0:3], q[3]])
+    return concatenate([array([q[3]]), -1*q[1:]])
