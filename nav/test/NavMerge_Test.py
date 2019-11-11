@@ -9,6 +9,7 @@ from numpy import array, concatenate, allclose
 from numpy.linalg import norm
 from nav.constants import PASS, FAIL
 from nav.NavMerge import *
+from nav.common_utils import unit_test
 
 
 def merge_accel_test_null():
@@ -149,6 +150,8 @@ def merge_main_test():
 
 # Test Loop
 def main():
+    module_name = 'NavMerge.py'
+    
     tests = [
         merge_accel_test_null,
         merge_accel_test_values,
@@ -158,23 +161,7 @@ def main():
         merge_velocity_test_values
     ]
 
-    passed = 0
-    failed = 0
-    fail_messages = []
-
-    for test in tests:
-        status, description = test()
-        if status == PASS:
-            passed += 1
-        else:
-            failed += 1
-            fail_messages.append(description)
-
-    print('{} out of {} tests passed.'.format(passed, len(tests)))
-    if len(fail_messages) > 0:
-        print('Failed tests:')
-        for msg in fail_messages:
-            print('\t' + msg)
+    unit_test(module_name, tests)
 
 
 if __name__ == '__main__':
