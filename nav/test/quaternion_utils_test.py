@@ -23,10 +23,8 @@ def qcomp_test_null():
     ret = qcomp(q1, q2)
 
     # results
-    if allclose(ret, exp, atol=0.001):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def qcomp_test_values():
@@ -42,10 +40,8 @@ def qcomp_test_values():
     ret = qcomp(q1, q2)
 
     # results
-    if allclose(ret, exp, atol=0.001):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def qnorm_test_null():
@@ -60,10 +56,8 @@ def qnorm_test_null():
     ret = qnorm(q)
 
     # results
-    if allclose(ret, exp, atol=0.001):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def qnorm_test_values():
@@ -78,10 +72,110 @@ def qnorm_test_values():
     ret = qnorm(q)
 
     # results
-    if allclose(ret, exp, atol=0.001):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
+
+
+def qvectransform_test_null1():
+    # setup
+    description = 'qvectransform_test_null1 - Test qvectransform with zeroed-out inputs'
+    q = array([0.0, 0.0, 0.0, 0.0])
+    v = array([0.0, 0.0, 0.0])
+
+    # expected results
+    exp = array([0.0, 0.0, 0.0])
+
+    # unit test
+    ret = qvectransform(q, v)
+
+    # results
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
+
+
+def qvectransform_test_null2():
+    # setup
+    description = 'qvectransform_test_null2 - Test qvectransform with transform quaternion, zeroed-out vector'
+    q = array([0.70710678, 0.0, 0.70710678, 0.0])  # rotate about y-axis by pi/2 rad
+    v = array([0.0, 0.0, 0.0])
+
+    # expected results
+    exp = array([0.0, 0.0, 0.0])
+
+    # unit test
+    ret = qvectransform(q, v)
+
+    # results
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
+
+
+def qvectransform_test_null3():
+    # setup
+    description = 'qvectransform_test_null3 - Test qvectransform with zeroed-out quaternion, non-zero vector'
+    q = array([0.0, 0.0, 0.0, 0.0])
+    v = array([1.0, 1.0, 1.0])
+
+    # expected results
+    exp = array([0.0, 0.0, 0.0])
+
+    # unit test
+    ret = qvectransform(q, v)
+
+    # results
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
+
+
+def qvectransform_test_values1():
+    # setup
+    description = 'qvectransform_test_values1 - Test qvectransform with scalar quaternion'
+    q = array([1.0, 0.0, 0.0, 0.0])
+    v = array([10.0, 5.0, 1.0])
+
+    # expected results
+    exp = array([10.0, 5.0, 1.0])
+
+    # unit test
+    ret = qvectransform(q, v)
+
+    # results
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
+
+
+def qvectransform_test_values2():
+    # setup
+    description = 'qvectransform_test_values2 - Test qvectransform with transform quaternion'
+    q = array([0.70710678, 0.0, 0.70710678, 0.0])  # rotate about y-axis by pi/2 rad
+    v = array([1.0, 0.0, 0.0])
+
+    # expected results
+    exp = array([0.0, 0.0, 1.0])
+
+    # unit test
+    ret = qvectransform(q, v)
+
+    # results
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
+
+
+def qvectransform_test_values3():
+    # setup
+    description = 'qvectransform_test_values3 - Test qvectransform with transform quaternion'
+    q = array([0.5, 0.5, 0.5, 0.5])  # rotate about [1, 1, 1] by 2*pi/3 rad
+    v = array([0.0, 1.0, 0.0])
+
+    # expected results
+    exp = array([1.0, 0.0, 0.0])
+
+    # unit test
+    ret = qvectransform(q, v)
+
+    # results
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def qconjugate_test_null():
@@ -96,10 +190,8 @@ def qconjugate_test_null():
     ret = qconjugate(q)
 
     # results
-    if allclose(ret, exp, atol=0.001):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def qconjugate_test_values():
@@ -114,10 +206,8 @@ def qconjugate_test_values():
     ret = qconjugate(q)
 
     # results
-    if allclose(ret, exp, atol=0.001):
-        return PASS, description
-    else:
-        return FAIL, description
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 
 def main():
@@ -127,6 +217,12 @@ def main():
         qnorm_test_values,
         qcomp_test_null,
         qcomp_test_values,
+        qvectransform_test_null1,
+        qvectransform_test_null2,
+        qvectransform_test_null3,
+        qvectransform_test_values1,
+        qvectransform_test_values2,
+        qvectransform_test_values3,
         qconjugate_test_null,
         qconjugate_test_values
     ]
