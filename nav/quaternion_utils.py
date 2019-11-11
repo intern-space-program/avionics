@@ -18,13 +18,13 @@ def qcomp(q1, q2):
     '''
     Compose two quaternions.
     '''
-    q1s = q1[3]
-    q1v = array(q1[0:3])
-    q2s = q2[3]
-    q2v = array(q2[0:3])
+    q1s = q1[0]
+    q1v = array(q1[1:])
+    q2s = q2[0]
+    q2v = array(q2[1:])
 
+    s = array([q1s * q2s - dot(q2v, q1v)])
     v = q1s*q2v + q2s*q1v - cross(q1v, q2v)
-    s = array([q1s*q2s - dot(q2v, q1v)])
 
     return concatenate([s, v])
 
