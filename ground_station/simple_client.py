@@ -61,7 +61,7 @@ while vid_sock_alive or telem_sock_alive:
 		if key.data is not(None) and mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
 			if key.data == 'VIDEO':
 				if vid_sock_alive:
-					new_data = socket_obj.recv(4096)
+					new_data = str(socket_obj.recv(4096))
 					if not(new_data):
 						print("%s: Pipe Broken, closing socket"%(key.data))
 						sel.unregister(socket_obj)
@@ -69,7 +69,7 @@ while vid_sock_alive or telem_sock_alive:
 						vid_sock_alive = False
 
 					else:
-						if b'KILL STREAM' in new_data:
+						if "KILL STREAM" in new_data:
 							print("%s: Kill switch received; Closing socket"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
@@ -84,7 +84,7 @@ while vid_sock_alive or telem_sock_alive:
 
 			if key.data == 'TELEMETRY':
 				if telem_sock_alive:
-					new_data = socket_obj.recv(4096)
+					new_data = str(socket_obj.recv(4096))
 					if not(new_data):
 						print("%s: Pipe Broken, closing socket"%(key.data))
 						sel.unregister(socket_obj)
@@ -93,7 +93,7 @@ while vid_sock_alive or telem_sock_alive:
 
 
 					else:
-						if b'KILL STREAM' in new_data:
+						if "KILL STREAM" in new_data:
 							print("%s: Kill switch received; Closing socket"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
