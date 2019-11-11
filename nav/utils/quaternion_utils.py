@@ -43,7 +43,7 @@ def qvectransform(q, v):
     '''
     Transform a vector's frame.
     '''
-    qvec = concatenate([v, array([0])])
+    qvec = concatenate([array([0]), v])
     transformed = qcomp(q, qcomp(qvec, qconjugate(q)))
     return transformed[1:]
 
