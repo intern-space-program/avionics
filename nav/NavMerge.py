@@ -75,11 +75,15 @@ def merge_attitude(prev_attitude, current_attitude, delta_theta):
     :param current_attitude: `np.array([1x4])` (--) The IMU's estimate of the current attitude
     :param delta_theta: `np.array([1x3])` (rad) The IMU's delta-angle measurements
     '''
-    dq_inert_to_body = norm(concatenate([np.array([1]), 0.5*delta_theta]))
-    q_inert_to_body_new_calc = qcomp(prev_attitude, dq_inert_to_body)
+    # TODO: uncomment this once it's tested
+    # dq_inert_to_body = norm(concatenate([np.array([1]), 0.5*delta_theta]))
+    # q_inert_to_body_new_calc = qcomp(prev_attitude, dq_inert_to_body)
+    #
+    # q_inert_to_body_new = 0.5*(current_attitude + q_inert_to_body_new_calc)
+    # q_inert_to_body_new = qnorm(q_inert_to_body_new)
 
-    q_inert_to_body_new = 0.5*(current_attitude + q_inert_to_body_new_calc)
-    q_inert_to_body_new /= norm(q_inert_to_body_new)
+    # TODO: delete this line once the above block is uncommented
+    q_inert_to_body_new = current_attitude
     
     return q_inert_to_body_new
 
