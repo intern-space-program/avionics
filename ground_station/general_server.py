@@ -83,23 +83,25 @@ class server_stream:
 		log_start("%s: %s"%(self.name, msg))
 	
 	def print_state(self):
+		if (not(self.print_output)):
+			return
 		state = ["DEAD", "ALIVE"]
 		self.stream_print("Server State: %s"%(state[int(self.alive)]))
-		self.stream_print("Undeclared Sockets: %d"%(len(self.undeclared_sockets)))
+		print("\tUndeclared Sockets: %d"%(len(self.undeclared_sockets)))
 		cnt = 0
 		for sockets in self.undeclared_sockets:
 			cnt += 1
-			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
-		self.stream_print("SINK Sockets:       %d"%(len(self.sink_sockets)))
+			print("\t\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
+		print("\tSINK Sockets:       %d"%(len(self.sink_sockets)))
 		cnt = 0
 		for sockets in self.sink_sockets:
 			cnt += 1
-			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
-		self.stream_print("SRC Sockets:        %d"%(len(self.src_sockets)))
+			print("\t\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
+		print("\tSRC Sockets:        %d"%(len(self.src_sockets)))
 		cnt = 0
 		for sockets in self.src_sockets:
 			cnt += 1
-			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
+			print("\t\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
 
 	def claim_socket(self, socket_obj):
 		for socket in self.undeclared_sockets:
@@ -169,7 +171,7 @@ class server_stream:
 			if (not(self.mode & SRC2SINK)):
 				self.stream_print("DOWNSTREAM ACCESS DENIED")
 				return
-			if(not(self.donstream_file)):
+			if(not(self.downstream_file)):
 				return
 			self.stream_print("Closing DOWNSTREAM File")
 			self.src2sink_handle.close()
@@ -208,13 +210,13 @@ class server_stream:
 		if (mode & SRC2SINK == SRC2SINK):
 			if (not(self.mode & SRC2SINK)):
 				self.stream_print("NO DOWNSTREAM BUFFER")
-				return
+				return 0
 			return self.src2sink_buffer.getbuffer().nbytes
 
 		if (mode & SINK2SRC == SINK2SRC):
 			if (not(self.mode & SINK2SRC)):
 				self.stream_print("NO UPSTREAM BUFFER")
-				return
+				return 0
 			return self.sink2src_buffer.getbuffer().nbytes
 
 	def clear_buffer(self, mode):
@@ -251,7 +253,7 @@ class server_stream:
 				self.stream_print("NO SINK2SRC BUFFER")
 				return
 			self.stream_print("Adding to SINK2SRC Buffer")
-			self.SINK2SRC_buffer.write(msg)
+			self.sink2src_buffer.write(msg)
 	
 	def send_packet(self, msg, direction, selector_obj):
 		if (direction & SRC2SINK == SRC2SINK):
@@ -259,7 +261,7 @@ class server_stream:
 				self.stream_print("NO SRC2SINK ACCESS")
 				return
 			self.stream_print("Sending Packet from SRC(s) -> SINK(s)")
-			for socket in sink_sockets:
+			for socket in self.sink_sockets:
 				try: 
 					socket.sendall(msg)
 				except:
@@ -271,7 +273,7 @@ class server_stream:
 				self.stream_print("NO SINK2SRC ACCESS")
 				return
 			self.stream_print("Sending Packet from SINK(s) -> SRC(s)")
-			for socket in src_sockets:
+			for socket in self.src_sockets:
 				try: 
 					socket.sendall(msg)
 				except:

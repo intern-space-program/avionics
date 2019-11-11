@@ -11,25 +11,21 @@ def get_user_input(vid_sock, telem_sock):
 	global telem_sock_alive
 	global vid_sock_alive
 	while vid_sock_alive or telem_sock_alive:
-		new_input = input("Waiting for user input (specify 'vid' or 'telem' in message):\n")
+		new_input = input("")
 		new_input = str(new_input)
 		if new_input.find("vid") != -1:
 			new_input.replace("vid", '')
 			if new_input.find("kill") != -1:
 				vid_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
-				vid_sock_alive = False
-				vid_sock.close()
 			else:
 				vid_sock.sendall(new_input.encode('utf-8'))
 				print("Message sent on VIDEO socket")
 		elif new_input.find("telem") != -1:
-			new_input.replace("vid", '')
+			new_input.replace("telem", '')
 			if new_input.find("kill") != -1:
 				telem_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
-				telem_sock_alive = False
-				vid_sock.close()
 			else:
 				telem_sock.sendall(new_input.encode('utf-8'))
 				print("Message sent on TELEMETRY socket")
@@ -57,7 +53,7 @@ sel.register(client_telem_sock, selectors.EVENT_READ|selectors.EVENT_WRITE, data
 
 message_send = threading.Thread(target = get_user_input, args = (client_vid_sock, client_telem_sock))
 message_send.start()
-
+print("Waiting for user input (specify 'vid' or 'telem' in message):\n")
 while vid_sock_alive or telem_sock_alive:
 	events = sel.select(timeout=0.1)#BLOCKING, can set timeout to not block
 	for key, mask in events:
@@ -65,7 +61,7 @@ while vid_sock_alive or telem_sock_alive:
 		if key.data is not(None) and mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
 			if key.data == 'VIDEO':
 				if vid_sock_alive:
-					new_data = socket_obj.recv(4096)
+					new_data = str(socket_obj.recv(4096))
 					if not(new_data):
 						print("%s: Pipe Broken, closing socket"%(key.data))
 						sel.unregister(socket_obj)
@@ -73,7 +69,7 @@ while vid_sock_alive or telem_sock_alive:
 						vid_sock_alive = False
 
 					else:
-						if b'KILL STREAM' in new_data:
+						if "KILL STREAM" in new_data:
 							print("%s: Kill switch received; Closing socket"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
@@ -88,7 +84,7 @@ while vid_sock_alive or telem_sock_alive:
 
 			if key.data == 'TELEMETRY':
 				if telem_sock_alive:
-					new_data = socket_obj.recv(4096)
+					new_data = str(socket_obj.recv(4096))
 					if not(new_data):
 						print("%s: Pipe Broken, closing socket"%(key.data))
 						sel.unregister(socket_obj)
@@ -97,7 +93,7 @@ while vid_sock_alive or telem_sock_alive:
 
 
 					else:
-						if b'KILL STREAM' in new_data:
+						if "KILL STREAM" in new_data:
 							print("%s: Kill switch received; Closing socket"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
