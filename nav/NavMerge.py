@@ -77,7 +77,7 @@ def merge_attitude(prev_attitude, current_attitude, delta_theta):
     '''
     # TODO: uncomment this once it's tested
     # dq_inert_to_body = norm(concatenate([np.array([1]), 0.5*delta_theta]))
-    # q_inert_to_body_new_calc = qcomp(prev_attitude, dq_inert_to_body)
+    # q_inert_to_body_new_calc = qcomp(prev_attitude, dq_inert_to_body)  # TODO: confirm this is the correct composition order
     #
     # q_inert_to_body_new = 0.5*(current_attitude + q_inert_to_body_new_calc)
     # q_inert_to_body_new = qnorm(q_inert_to_body_new)
