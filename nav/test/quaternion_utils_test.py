@@ -4,11 +4,10 @@ Programmed by: Mike Bernard
 Date: 2019-11-09
 '''
 
-from numpy import array, allclose
-from numpy.linalg import norm
-from nav.quaternion_utils import *
-from nav.common_utils import unit_test
-from nav.constants import PASS, FAIL
+from numpy import allclose
+from nav.utils.quaternion_utils import *
+from nav.utils.common_utils import unit_test
+from nav.utils.constants import PASS, FAIL
 
 
 def qcomp_test_null():

@@ -5,11 +5,9 @@ Programmed by: Mike Bernard
 Date: 2019-11-05
 '''
 
-from numpy import array, concatenate, allclose
-from numpy.linalg import norm
-from nav.constants import PASS, FAIL
+from numpy import allclose
 from nav.NavMerge import *
-from nav.common_utils import unit_test
+from nav.utils.common_utils import unit_test
 
 
 def merge_accel_test_null():

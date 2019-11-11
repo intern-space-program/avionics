@@ -6,7 +6,7 @@ Date: 2019-11-08
 Common helper functions used in multiple scripts.
 '''
 
-from nav.constants import PASS, FAIL
+from nav.utils.constants import PASS
 
 
 def weighted_avg(values, weights):

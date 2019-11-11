@@ -8,9 +8,9 @@ the last known state to the current time.
 '''
 
 import numpy as np
-from nav.quaternion_utils import *
-from nav.constants import *
-from nav.common_utils import weighted_avg
+from nav.utils.quaternion_utils import *
+from nav.utils.constants import *
+from nav.utils.common_utils import weighted_avg
 
 
 def merge_accel(prev_position, accel_nc, accel_c):
