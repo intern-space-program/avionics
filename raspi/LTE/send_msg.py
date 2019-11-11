@@ -15,8 +15,6 @@ while not(connected == 1):
 		hologram.network.connect(timeout = 10)
 	else:
 		print "Trying to Reconnect (%d)"%(connected)
-		hologram.network.disconnect()
-		hologram.network.connect(timeout = 10)
 	connected  = hologram.network.getConnectionStatus()
 print "Connected!"
 

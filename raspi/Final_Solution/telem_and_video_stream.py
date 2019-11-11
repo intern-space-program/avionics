@@ -289,14 +289,27 @@ class teensy_handle:
 	
 	def __init__(self):
 		self.baudrate = 115200
-		self.serial_port = '/dev/ttyAMA0'
+		self.serial_port = '/dev/ttyACM0' #USB serial
+		#self.serial_port = '/dev/ttyAMA0' #Serial pins TX/RX -> 14/15
 		self.ser = None
 		self.status = [0,0,0] #teensy, imu, gps, alt
 		self.connected = False
 		self.alive = False
+		self.print_output = True
+		self.log_output = True
 		
 	def __bool__(self):
 		return self.alive
+	
+	def stream_print(self, msg):
+		if (not(self.print_output)):
+			return
+		print("TEENSY: %s"%(msg))
+
+	def log_print(self, msg):
+		if (not(self.log_output)):
+			return
+		log_start("TEENSY: %s"%(msg))
 
 	def connect(self):
 		connect_cnt = 0
@@ -304,11 +317,14 @@ class teensy_handle:
 			try:
 				self.ser = serial.Serial(self.serial_port, self.baudrate, timeout=0.1)
 				self.connected = True
+				self.stream_print("Connected!")
+				self.log_print("Connected!")
 			except:
 				connect_cnt += 1 
-				print("Trying to Connect: Attempt #%d"%(connect_cnt))
+				self.stream_print("Trying to Connect: Attempt #%d"%(connect_cnt))
 				if connect_cnt > 10:
-					print("Teensy not found, Unable to Connect")
+					self.stream_print("Not found, Unable to Connect")
+					self.log_print("Not found, Unable to Connect")
 					return
 
 
@@ -316,45 +332,52 @@ class teensy_handle:
 		if (not(self.connected)):
 			return
 		starting = False
-		print("Starting Startup")
+		self.stream_print("Starting Startup")
 		for i in range(0,5):
-			print('Start_up Attempt %d'%(i))
+			self.stream_print('Start_up Attempt %d'%(i))
 			self.ser.write(b'startup')
 			resp = self.ser.readline()
-			print(resp)
 			if b'starting' in resp:
 				starting = True
 				break
 		if (not(starting)):
-			print("ERROR Teensy never heard startup")
+			self.stream_print("ERROR Teensy never heard startup")
+			self.log_print("ERROR Teensy never heard startup")
 			return
 		resp = b''
-		print("Started and waiting for initialized from teensy")
+		self.stream_print("Started and waiting for initialized from teensy")
 		start = time.time()
 		while(not(b'initialized' in resp)):
 			#do error analysis of output in here
 			resp = self.ser.readline()
-			print(resp)
+			if resp:
+				self.stream_print(resp)
 			if time.time()-start > 10:
-				print("ERROR Teensy Watch Dog Timed out")
+				self.log_print("ERROR Teensy Watch Dog Timed out")
+				self.stream_print("ERROR Teensy Watch Dog Timed out")
 				return
-		print("Teensy successfully started")
+		self.stream_print("Teensy successfully started")
+		self.log_print("Teensy successfully started")
 		self.alive = True
 
 	def start_stream(self):
+		if (not(self.connected)):
+			return
+		self.stream_print("Beginning JSON Stream")
+		self.log_print("Beginning JSON Stream")
 		self.ser.write(b'dump')
 
 	def read_in_json(self):
+		if (not(self.connected)):
+			return
+		JSON_packet = b''
 		try:
 			JSON_packet = self.ser.readline()
 		except:
-			print("Teensy Stream Interrupted")
 			self.alive = False
-			self.connect()
 
 		if (len(JSON_packet)):
-			print("========================= TELEMETRY ============================")
-			print("New Packet: %s"%(JSON_packet))
+			self.stream_print("New Packet: %s"%(JSON_packet))
 			if (JSON_packet.find(b'dump_init') != -1):
 				self.alive = False
 				for i in range(0,3):
@@ -366,7 +389,7 @@ class teensy_handle:
 			try:
 				JSON_obj = json.loads(JSON_packet)
 			except:
-				print("Error Creating JSON Obj; Invalid String")
+				self.stream_print("Error Creating JSON Obj; Invalid String")
 				corrupt = True
 				pass
 			if (not(corrupt)):
@@ -379,7 +402,7 @@ class teensy_handle:
 vid_record_file = store_dir + '/video_stream.h264' #on-board file video is stored to
 telem_record_file = store_dir + '/telemtry_stream.txt'
 bitrate_max = 200000 # bits per second
-record_time = 10.1 # Time in seconds that the recording runs for
+record_time = 30 # Time in seconds that the recording runs for
 record_chunk = 0.12 #chunk size in seconds video object is broken into and sent 
 frame_rate = 15 #camera frame rate
 interrupt_bool = False #global interrupt flag that ends recording/program
