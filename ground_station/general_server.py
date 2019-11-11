@@ -87,17 +87,17 @@ class server_stream:
 		self.stream_print("Server State: %s"%(state[int(self.alive)]))
 		self.stream_print("Undeclared Sockets: %d"%(len(self.undeclared_sockets)))
 		cnt = 0
-		for sockets in undeclared_sockets:
+		for sockets in self.undeclared_sockets:
 			cnt += 1
 			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
 		self.stream_print("SINK Sockets:       %d"%(len(self.sink_sockets)))
 		cnt = 0
-		for sockets in sink_sockets:
+		for sockets in self.sink_sockets:
 			cnt += 1
 			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
 		self.stream_print("SRC Sockets:        %d"%(len(self.src_sockets)))
 		cnt = 0
-		for sockets in src_sockets:
+		for sockets in self.src_sockets:
 			cnt += 1
 			self.stream_print("\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
 
