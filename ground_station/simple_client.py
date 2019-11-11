@@ -11,7 +11,7 @@ def get_user_input(vid_sock, telem_sock):
 	global telem_sock_alive
 	global vid_sock_alive
 	while vid_sock_alive or telem_sock_alive:
-		new_input = input("Waiting for user input (specify 'vid' or 'telem' in message):\n")
+		new_input = input("")
 		new_input = str(new_input)
 		if new_input.find("vid") != -1:
 			new_input.replace("vid", '')
@@ -53,7 +53,7 @@ sel.register(client_telem_sock, selectors.EVENT_READ|selectors.EVENT_WRITE, data
 
 message_send = threading.Thread(target = get_user_input, args = (client_vid_sock, client_telem_sock))
 message_send.start()
-
+print("Waiting for user input (specify 'vid' or 'telem' in message):\n")
 while vid_sock_alive or telem_sock_alive:
 	events = sel.select(timeout=0.1)#BLOCKING, can set timeout to not block
 	for key, mask in events:
