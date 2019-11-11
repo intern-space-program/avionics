@@ -30,6 +30,7 @@ def merge_accel_test_null():
         else (FAIL, description)
 
 
+# TODO: this test fails since merge_accel descoped to just return accel_nc input
 def merge_accel_test_values():
     # setup
     description = 'merge_accel_test_values - Test merge_accel with non-zero inputs'
@@ -129,8 +130,21 @@ def merge_velocity_test_values():
 
 
 def merge_attitude_test():
-    pass
+    # setup
+    description = 'merge_attitude_test - Test merge_attitude function with an input (F2019 version just returns the input)'
+    prev_attitude = array([0.5, 0.5, 0.5, 0.5])
+    current_attitude = array([1.0, 0.0, 0.0, 0.0])
+    delta_theta = array([1.0, 1.0, 1.0])
 
+    # expected results
+    exp = array([1.0, 0.0, 0.0, 0.0])
+
+    # unit test
+    ret = merge_attitude(prev_attitude, current_attitude, delta_theta)
+
+    # results
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
 
 def merge_main_test():
     '''
@@ -150,7 +164,8 @@ def main():
         merge_position_test_null,
         merge_position_test_values,
         merge_velocity_test_null,
-        merge_velocity_test_values
+        merge_velocity_test_values,
+        merge_attitude_test
     ]
 
     unit_test(module_name, tests)
