@@ -56,6 +56,7 @@ def qconjugate(q):
     return concatenate([array([q[0]]), -1*q[1:]])
 
 
+# TODO: add unit tests for axis_angle_to_quaternion (not used in any F2019 scripts)
 def axis_angle_to_quaternion(axis, angle_rad):
     '''
     Convert an Euler axis and angle to a quaternion.
