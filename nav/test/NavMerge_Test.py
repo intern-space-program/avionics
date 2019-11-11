@@ -99,8 +99,44 @@ def merge_position_test_values():
         return FAIL, description
 
 
-def merged_velocity_test():
-    pass
+def merge_velocity_test_null():
+    # setup
+    description = 'merge_velocity_test_null - Test merge_velocity with zeroed-out inputs'
+    prev_velocity = array([0.0, 0.0, 0.0])
+    dt = 0.0
+    accel_merged = array([0.0, 0.0, 0.0])
+
+    # expected results
+    exp = array([0.0, 0.0, 0.0])
+
+    # unit test
+    ret = merge_velocity(prev_velocity, dt, accel_merged)
+
+    # results
+    if allclose(ret, exp, atol=0.001):
+        return PASS, description
+    else:
+        return FAIL, description
+
+
+def merge_velocity_test_values():
+    # setup
+    description = 'merge_velocity_test_null - Test merge_velocity with non-zero inputs'
+    prev_velocity = array([1.0, 1.0, 1.0])
+    dt = 0.1
+    accel_merged = array([10.0, 10.0, 10.0])
+
+    # expected results
+    exp = array([2.0, 2.0, 2.0])
+
+    # unit test
+    ret = merge_velocity(prev_velocity, dt, accel_merged)
+
+    # results
+    if allclose(ret, exp, atol=0.01):
+        return PASS, description
+    else:
+        return FAIL, description
 
 
 def merge_attitude_test():
@@ -117,7 +153,9 @@ def main():
         merge_accel_test_null,
         merge_accel_test_values,
         merge_position_test_null,
-        merge_position_test_values
+        merge_position_test_values,
+        merge_velocity_test_null,
+        merge_velocity_test_values
     ]
 
     passed = 0
