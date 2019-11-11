@@ -30,7 +30,7 @@ def unit_test(module_name, tests):
     '''
     Run a set of test functions and print out the results.
     :param module_name: `str` the name of the module being tested
-    :param tests: `list` of function objects
+    :param tests: `list` of functions to test as objects
     '''
     passed = 0
     failed = 0
