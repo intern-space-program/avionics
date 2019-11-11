@@ -21,13 +21,19 @@ def merge_accel(prev_position, accel_nc, accel_c):
 
     For parameter descriptions, see merge_main function.
     '''
-    if norm(prev_position) != 0:
-        a_1_calulated = accel_nc - G_E*prev_position/((norm(prev_position))**3)
-        a_1_avg = 0.5*(a_1_calulated + accel_c)
-    else:
-        a_1_avg = accel_c
 
-    return a_1_avg
+    # For some IMUs, the accel_nc and accel_c are measured separately, but for
+    # F2019, the IMU just subtracts gravity from accel_c to get accel_nc.
+    # Since we just need accel_nc, we just use what the IMU gives us.
+    # if norm(prev_position) != 0:
+    #     a_1_calulated = accel_c - G_E*prev_position/((norm(prev_position))**3)
+    #     a_1_avg = 0.5*(a_1_calulated + accel_nc)
+    # else:
+    #     a_1_avg = accel_nc
+    #
+    # return a_1_avg
+
+    return accel_nc
 
 
 def merge_position(prev_position, prev_velocity, dt, accel_merged, gps, altitude):
@@ -84,7 +90,7 @@ def merge_attitude(prev_attitude, current_attitude, delta_theta):
 
     # TODO: delete this line once the above block is uncommented
     q_inert_to_body_new = current_attitude
-    
+
     return q_inert_to_body_new
 
 
@@ -107,11 +113,13 @@ def merge_main(prev_state, new_measurements):
     prev_attitude = prev_state['attitude']
 
     # unpack the sensor measurements
-    dt = new_measurements['dt']  # `float` (s) since previous state
+    current_time = new_measurements['time']
+    dt = current_time - prev_time  # `float` (s) since previous state
     # airspeed = new_measurements['airspeed']  # `float` (m/s) current airspeed (no airspeed sensor F2019)
     altitude = new_measurements['altitude']  # `float` (m) current altitude
     gps = new_measurements['gps']  # `np.array([1x3])` (m) GPS position vector
-    delta_theta = new_measurements['delta_theta']  # `np.array([1x3])` (rad) delta-angle IMU reading
+    ang_velocity = new_measurements['angular_velocity']  # `np.array([1x3])` (rad) angular velocity IMU reading
+    delta_theta = ang_velocity*dt  # `np.array([1x3])` (rad) change in attitude over time step
     accel_nc = new_measurements['accel_nc']  # `np.array([1x3])` (m/s**2) non-conservative acceleration
     accel_c = new_measurements['accel_c']  # `np.array([1x3])` (m/s**2) conservative acceleration
     q_inert_to_body = new_measurements['q_inert_to_body']  # `np.array([1x4])` (--) attitude quaternion
