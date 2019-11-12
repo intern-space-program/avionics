@@ -295,32 +295,10 @@ class server_stream:
 			self.close_socket(socket_obj, selector_obj)
 			self.print_state()
 			return
-		data_packet = data_packet.decode('utf-8')
-		if "KILL STREAM" in data_packet:
-			#kill switch for whole network -> ends Server and all clients
-			self.stream_print("KILL SWITCH RECIEVED. NOTIFYING ALL SINKS AND SOURCES")
-			for socket in self.undeclared_sockets:
-				try: 
-					socket.sendall(msg)
-				except:
-					#Broken Pipe error; Socket no longer connected
-					self.close_socket(socket, selector_obj)
-			for socket in self.sink_sockets:
-				try: 
-					socket.sendall(msg)
-				except:
-					#Broken Pipe error; Socket no longer connected
-					self.close_socket(socket, selector_obj)
-			for socket in self.src_sockets:
-				try: 
-					socket.sendall(msg)
-				except:
-					#Broken Pipe error; Socket no longer connected
-					self.close_socket(socket, selector_obj)
-			self.close()
 
 		#Data is not empty or kill switch. Check to see where data came from and where it should go
 		if socket_obj in self.undeclared_sockets:
+			data_packet = data_packet.decode('utf-8')
 			if "sink" in data_packet:
 				self.stream_print("Undeclared Socket (%s, %d) registering as SINK"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
 				self.undeclared_sockets.remove(socket_obj)
@@ -332,14 +310,37 @@ class server_stream:
 				self.undeclared_sockets.remove(socket_obj)
 				self.src_sockets.append(socket_obj)
 				self.print_state()
+			elif "KILL STREAM" in data_packet:
+				#kill switch for whole network -> ends Server and all clients
+				self.stream_print("KILL SWITCH RECIEVED. NOTIFYING ALL SINKS AND SOURCES")
+				msg = b'KILL STREAM'
+				for socket in self.undeclared_sockets:
+					try: 
+						socket.sendall(msg)
+					except:
+						#Broken Pipe error; Socket no longer connected
+						self.close_socket(socket, selector_obj)
+				for socket in self.sink_sockets:
+					try: 
+						socket.sendall(msg)
+					except:
+						#Broken Pipe error; Socket no longer connected
+						self.close_socket(socket, selector_obj)
+				for socket in self.src_sockets:
+					try: 
+						socket.sendall(msg)
+					except:
+						#Broken Pipe error; Socket no longer connected
+						self.close_socket(socket, selector_obj)
+				self.close()
 			else:
 				self.stream_print("UNRECOGNIZED DATA FROM UNDECLARED SOCKET (%s, %d)"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
 			return
 			
 		if socket_obj in self.sink_sockets:
 			direction = SINK2SRC
-			self.add_to_buffer(data_packet.encode('utf-8'), direction)
-			self.send_packet(data_packet.encode('utf-8'), direction, selector_obj)
+			self.add_to_buffer(data_packet, direction)
+			self.send_packet(data_packet, direction, selector_obj)
 			if (self.get_buffer_size(direction) > self.buffer_thresh):
 				self.store_buffer(direction)
 				self.clear_buffer(direction)
@@ -347,8 +348,8 @@ class server_stream:
 
 		if socket_obj in self.src_sockets:
 			direction = SRC2SINK
-			self.add_to_buffer(data_packet.encode('utf-8'), direction)
-			self.send_packet(data_packet.encode('utf-8'), direction, selector_obj)
+			self.add_to_buffer(data_packet, direction)
+			self.send_packet(data_packet, direction, selector_obj)
 			if (self.get_buffer_size(direction) > self.buffer_thresh):
 				self.store_buffer(direction)
 				self.clear_buffer(direction)
