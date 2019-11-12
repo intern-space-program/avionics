@@ -93,8 +93,8 @@ while vid_sock_alive or telem_sock_alive:
 						vid_sock_alive = False
 
 					else:
-						new_data = new_data.decode('utf-8')
-						if "KILL STREAM" in new_data:
+						search = "KILL STREAM"
+						if new_data.find(search.encode('utf-8')) != -1:
 							print("%s: Kill switch received -> Closing socket"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
@@ -118,8 +118,8 @@ while vid_sock_alive or telem_sock_alive:
 
 
 					else:
-						new_data = new_data.decode('utf-8')
-						if "KILL STREAM" in new_data:
+						search = "KILL STREAM"
+						if new_data.find(search.encode('utf-8')) != -1:
 							print("%s: Kill switch received -> Closing socket"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
