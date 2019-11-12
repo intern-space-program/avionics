@@ -21,7 +21,6 @@
 #	-> os: runs terminal commands from python
 #	-> sys: used exclusively for exiting the program
 
-
 from picamera import PiCamera
 from picamera import CircularIO
 from io import BytesIO
@@ -33,6 +32,11 @@ import sys
 import json
 import serial
 import struct
+from numpy import array
+
+# add nav directory to sys.path
+sys.path.append("../../")
+import nav.NavMain
 
 home = '/home/pi'
 store_dir = home + "/rocket_data"
@@ -462,11 +466,55 @@ def form_packet(JSON_obj):
 	
 	return packet_bytes
 
+def get_new_state(current_state, JSON_packet, previous_millis):
+	time_diff = JSON_packet["hdr"][1] - previous_millis
+	if time_diff > 500:
+		return current_state
+	else:
+		time_diff = float(time_diff)/1000.0
 
+	imu_data = JSON_obj["imu"]
+	gps_data = JSON_obj["gps"]
+	alt_data = JSON_obj["tpa"]
+
+	altitude = float(alt_data[2])
+	
+	#convert JSON_packet to python dict
+	sensor_readings = {
+		"time": time_diff,
+		"altitude": altitude,
+		"gps": array(gps_data),
+		"accel_nc": array(imu_data[7:10]),
+		"accel_c": array(imu_data[0:3]),
+		"angular_velocity": array(imu_data[13:16]),
+		"q_inert_to_body": array(imu_data[3:7])
+	}
+
+	#recieve updated state
+	updated_state = nav.NavMain.main(current_state, sensor_readings)
+
+	#return updated state
+	return updated_state
+
+def form_bin_packet(current_state):
+	#take in current state dict
+	#form binary packet
+	#return binary packet/
+	pass
 	
 #======================== Video/Telemetry Streaming and Recording ============
 loop_cnt = 0.0
 cnt = 0
+
+#Navigation Variables
+current_state = {
+	"time":0.0, 
+	"position":array([0.0, 0.0, 0.0]),
+	"velocity":array([0.0, 0.0, 0.0]),
+	"attitude":array([1.0, 0.0, 0.0, 0.0])
+}
+
+previous_millis = 0
 
 #Connect to Server
 video_stream.connect_to_server()
@@ -484,6 +532,7 @@ camera.start_recording(video_stream.write_buffer, format='h264', bitrate=bitrate
 threading.Timer(record_time, interrupt_func).start()
 threading.Timer(record_chunk, store_interrupt_func).start()
 
+#=================================== Offical Beginning of Stream -> Do all setup before this =============
 #Start dump of data from Teensy:
 teensy.start_stream()
 
@@ -497,7 +546,9 @@ while not(interrupt_bool):
 	if (not(new_JSON)):
 		pass
 	else:
-		packet_Bytes = form_packet(new_JSON)
+		current_state = get_new_state(current_state, new_JSON)
+		previous_millis = new_JSON["hdr"][1]
+		packet_Bytes = form_bin_packet(current_state)
 		
 	if (packet_Bytes):
 		#New Telemetry Data: Add to the buffer
