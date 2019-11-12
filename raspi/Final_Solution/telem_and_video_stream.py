@@ -444,28 +444,6 @@ def store_interrupt_func():
 	store_and_send_bool = True
 	#threading.Timer(record_chunk, store_interrupt_func).start()
 
-def form_packet(JSON_obj):
-	try:
-		packet_info = JSON_obj["hdr"]
-		packet_num = packet_info[0]
-		time_stamp = packet_info[1]
-		imu_data = JSON_obj["imu"]
-		gps_data = JSON_obj["gps"]
-		alt_data = JSON_obj["tpa"]
-	except:
-		return False
-	
-	all_data = [imu_data, gps_data, alt_data]
-
-	packet_bytes = bytearray([192, 222]) #0xC0DE in hex (BEGINNING OF PACKET)
-	packet_bytes += bytearray(struct.pack('>ii', packet_num, time_stamp))
-	for data_lists in all_data:
-		for data in data_lists:
-			packet_bytes += bytearray(struct.pack(">f", data))
-	packet_bytes += bytearray([237, 12]) #0xED0C in hex (END OF PACKET)
-	
-	return packet_bytes
-
 def get_new_state(current_state, JSON_packet, previous_millis):
 	time_diff = JSON_packet["hdr"][1] - previous_millis
 	if time_diff > 500:
@@ -496,11 +474,25 @@ def get_new_state(current_state, JSON_packet, previous_millis):
 	#return updated state
 	return updated_state
 
-def form_bin_packet(current_state):
+def form_bin_packet(current_state, packet_cnt, status_list):
 	#take in current state dict
+	MET = current_state["time"]	
+	position = current_state["position"]
+	velocity = current_state["velocity"]
+	attitude = current_state["attitude"]
+	
 	#form binary packet
-	#return binary packet/
-	pass
+	self.packet_cnt += 1
+	packet_bytes = bytearray([192, 222]) #0xC0DE in hex (BEGINNING OF PACKET)
+	packet_bytes += bytearray(struct.pack('>ii', packet_cnt, MET))
+	packet_bytes += bytearray(struct.pack('>???????', status_list[0], status_list[1],status_list[2],status_list[3],status_list[4],status_list[5],status_list[6]))
+	packet_bytes += bytearray(struct.pack('>fff', position[0], position[1], position[2]))
+	packet_bytes += bytearray(struct.pack('>fff', velocity[0], velocity[1], velocity[2]))
+	packet_bytes += bytearray(struct.pack('>ffff', attitutde[0], attitude[1], attitude[2], attitude[3]))
+	packet_bytes += bytearray([237,12]) #0xED0C in hex (END OF PACKET)
+	
+	#return binary packet
+	return packet_bytes
 	
 #======================== Video/Telemetry Streaming and Recording ============
 loop_cnt = 0.0
@@ -508,7 +500,7 @@ cnt = 0
 
 #Navigation Variables
 current_state = {
-	"time":0.0, 
+	"time": 0.0, 
 	"position":array([0.0, 0.0, 0.0]),
 	"velocity":array([0.0, 0.0, 0.0]),
 	"attitude":array([1.0, 0.0, 0.0, 0.0])
@@ -546,7 +538,7 @@ while not(interrupt_bool):
 	if (not(new_JSON)):
 		pass
 	else:
-		current_state = get_new_state(current_state, new_JSON)
+		current_state = get_new_state(current_state, new_JSON, previous_millis)
 		previous_millis = new_JSON["hdr"][1]
 		packet_Bytes = form_bin_packet(current_state)
 		
