@@ -121,6 +121,18 @@ class client_stream:
 			return
 		log_start("%s: %s"%(self.name, msg))
 	
+	def register_with_server(self):
+		if not(self.alive):
+			return
+		self.stream_print("Registering with server")
+		self.log_print("Registering with server")
+		if (self.name == 'VIDEO'):
+			
+			self.send_packet(b'vid src')
+		if (self.name == 'TELEMETRY'):
+			self.send_packet(b'telem src')
+		self.send_packet(b'im alive')
+
 	def connect_to_server(self):
 		connect_cnt = 0
 		self.log_print("Attempting to connect to server")
@@ -134,7 +146,8 @@ class client_stream:
 				break
 			except:
 				connect_cnt += 1
-
+		self.register_with_server()
+	
 	def store_buffer(self, mode):
 		if (mode & STREAM_READ == STREAM_READ):
 			if (not(self.mode & STREAM_READ)):
@@ -283,10 +296,28 @@ class client_stream:
 				self.log_print("Stream ended, storing, then closing connection and file")
 				self.close_socket()
 				return
-			print("%s: New Packet | Size: %d Bytes"%(self.name, len(packet)))
+			self.stream_print("%s: New Packet | Size: %d Bytes"%(self.name, len(packet)))
 			self.read_buffer.write(packet)
 			self.recv_packet_cnt += 1
 			self.recv_total_bytes += len(packet)
+
+	def wait_for_start(self, timeout):
+		start = time.time()
+		time_diff = time.time()-start
+		while(time_diff < timeout):
+			packet = self.socket_obj.recv(4096)
+			if (not(packet)):
+				self.stream_print("Stream ended, storing, then closing connection and file")
+				self.log_print("Stream ended, storing, then closing connection and file")
+				self.close_socket()
+				return
+			message = packet.decode('utf-8')
+			if "turn you on" in message:
+				self.stream_print("STARTUP FOUND!")
+				break
+			time_diff = time.time()-start
+			self.stream_print("Time left till start; %.2f"%(timeout-time_diff))
+			
 
 #================================== Serial Class =========================
 class teensy_handle:
@@ -424,7 +455,7 @@ camera.framerate = frame_rate
 
 #Network Settings
 SERVER_IP = '73.136.139.198'
-#SERVER_IP = '192.168.0.108'
+SERVER_IP = '10.0.0.178'
 SERVER_VIDEO_PORT = 5000
 SERVER_TELEM_PORT = 5001
 
@@ -451,9 +482,9 @@ def get_new_state(current_state, JSON_packet, previous_millis):
 	else:
 		time_diff = float(time_diff)/1000.0
 
-	imu_data = JSON_obj["imu"]
-	gps_data = JSON_obj["gps"]
-	alt_data = JSON_obj["tpa"]
+	imu_data = JSON_packet["imu"]
+	gps_data = JSON_packet["gps"]
+	alt_data = JSON_packet["tpa"]
 
 	altitude = float(alt_data[2])
 	
@@ -482,13 +513,12 @@ def form_bin_packet(current_state, packet_cnt, status_list):
 	attitude = current_state["attitude"]
 	
 	#form binary packet
-	self.packet_cnt += 1
 	packet_bytes = bytearray([192, 222]) #0xC0DE in hex (BEGINNING OF PACKET)
-	packet_bytes += bytearray(struct.pack('>ii', packet_cnt, MET))
+	packet_bytes += bytearray(struct.pack('>if', packet_cnt, MET))
 	packet_bytes += bytearray(struct.pack('>???????', status_list[0], status_list[1],status_list[2],status_list[3],status_list[4],status_list[5],status_list[6]))
 	packet_bytes += bytearray(struct.pack('>fff', position[0], position[1], position[2]))
 	packet_bytes += bytearray(struct.pack('>fff', velocity[0], velocity[1], velocity[2]))
-	packet_bytes += bytearray(struct.pack('>ffff', attitutde[0], attitude[1], attitude[2], attitude[3]))
+	packet_bytes += bytearray(struct.pack('>ffff', attitude[0], attitude[1], attitude[2], attitude[3]))
 	packet_bytes += bytearray([237,12]) #0xED0C in hex (END OF PACKET)
 	
 	#return binary packet
@@ -505,7 +535,7 @@ current_state = {
 	"velocity":array([0.0, 0.0, 0.0]),
 	"attitude":array([1.0, 0.0, 0.0, 0.0])
 }
-
+status_list = [False, False, False, False, False, False, False] #IMU, GPS, ALT, Teensy, Raspi, LTE, Serial
 previous_millis = 0
 
 #Connect to Server
@@ -517,6 +547,13 @@ teensy = teensy_handle()
 teensy.connect()
 teensy.start_up()
 
+#Wait for startup signal from server
+if (telem_stream.alive):
+	telem_stream.wait_for_start(20)
+
+print("STARTING STREAM")	
+
+#=================================== Offical Beginning of Stream -> Do all setup before this =============
 #Begin Pi Cam recording
 camera.start_recording(video_stream.write_buffer, format='h264', bitrate=bitrate_max)
 
@@ -524,7 +561,6 @@ camera.start_recording(video_stream.write_buffer, format='h264', bitrate=bitrate
 threading.Timer(record_time, interrupt_func).start()
 threading.Timer(record_chunk, store_interrupt_func).start()
 
-#=================================== Offical Beginning of Stream -> Do all setup before this =============
 #Start dump of data from Teensy:
 teensy.start_stream()
 
@@ -540,7 +576,7 @@ while not(interrupt_bool):
 	else:
 		current_state = get_new_state(current_state, new_JSON, previous_millis)
 		previous_millis = new_JSON["hdr"][1]
-		packet_Bytes = form_bin_packet(current_state)
+		packet_Bytes = form_bin_packet(current_state, new_JSON["hdr"][0], status_list)
 		
 	if (packet_Bytes):
 		#New Telemetry Data: Add to the buffer
