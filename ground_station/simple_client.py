@@ -54,15 +54,22 @@ SERVER_IP = '10.0.0.178'
 SERVER_VIDEO_PORT = 5000
 SERVER_TELEM_PORT = 5001
 
-client_vid_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_vid_sock.connect_ex((SERVER_IP, SERVER_VIDEO_PORT))
-client_vid_sock.setblocking(False)
-print("VIDEO SOCKET CONNECTED")
+while True:
+	ip_address = input("Enter the local or global ip address: ")
+	SERVER_IP = ip_address
+	try:
+		client_vid_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		client_vid_sock.connect_ex((SERVER_IP, SERVER_VIDEO_PORT))
+		client_vid_sock.setblocking(False)
+		print("VIDEO SOCKET CONNECTED")
 
-client_telem_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_telem_sock.connect_ex((SERVER_IP, SERVER_TELEM_PORT))
-client_telem_sock.setblocking(True)
-print("TELEMETRY SOCKET CONNECTED")
+		client_telem_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		client_telem_sock.connect_ex((SERVER_IP, SERVER_TELEM_PORT))
+		client_telem_sock.setblocking(True)
+		print("TELEMETRY SOCKET CONNECTED")
+		break
+	except:
+		print("Unable to connect. Check ip")
 
 sel = selectors.DefaultSelector()
 sel.register(client_vid_sock, selectors.EVENT_READ|selectors.EVENT_WRITE, data = 'VIDEO')
