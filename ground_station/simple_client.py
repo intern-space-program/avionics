@@ -47,6 +47,7 @@ def get_user_input(vid_sock, telem_sock):
 		telem_sock.close()
 	except:
 		pass
+	print("THREAD SHOULD BE ENDING HERE")
 	
 
 SERVER_IP = '10.0.0.178'
@@ -87,7 +88,7 @@ while vid_sock_alive or telem_sock_alive:
 					else:
 						new_data = new_data.decode('utf-8')
 						if "KILL STREAM" in new_data:
-							print("%s: Kill switch received; Closing socket"%(key.data))
+							print("%s: Kill switch received -> Closing socket"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
 							vid_sock_alive = False
@@ -112,7 +113,7 @@ while vid_sock_alive or telem_sock_alive:
 					else:
 						new_data = new_data.decode('utf-8')
 						if "KILL STREAM" in new_data:
-							print("%s: Kill switch received; Closing socket"%(key.data))
+							print("%s: Kill switch received -> Closing socket"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
 							telem_sock_alive = False

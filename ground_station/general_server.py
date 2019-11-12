@@ -124,7 +124,7 @@ class server_stream:
 		events = selectors.EVENT_READ | selectors.EVENT_WRITE
 		selector_obj.register(client_sock, events, data=data)
 		client_sock.sendall(b'Please register as "sink" or "src"')
-		
+		self.print_state()
 
 	def close(self):
 		self.stream_print("RUNNING FULL CLOSE")
@@ -285,7 +285,10 @@ class server_stream:
 	def recv_new_packet(self, socket_obj, selector_obj):
 		if (not(self.alive)):
 			return
-		data_packet = socket_obj.recv(4096)
+		try:
+			data_packet = socket_obj.recv(4096)
+		except:
+			self.stream_print("ERROR READING FROM (%s, %d)"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
 		if (not(data_packet)):
 			#Data is empty; socket closed by them
 			self.stream_print("Empty data recieved, closing socket to (%s, %d)"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
@@ -296,9 +299,24 @@ class server_stream:
 		if "KILL STREAM" in data_packet:
 			#kill switch for whole network -> ends Server and all clients
 			self.stream_print("KILL SWITCH RECIEVED. NOTIFYING ALL SINKS AND SOURCES")
-			self.mode = DUPLEX
-			self.send_packet(data_packet.encode('utf-8'), SRC2SINK, selector_obj)
-			self.send_packet(data_packet.encode('utf-8'), SINK2SRC, selector_obj)
+			for socket in self.undeclared_sockets:
+				try: 
+					socket.sendall(msg)
+				except:
+					#Broken Pipe error; Socket no longer connected
+					self.close_socket(socket, selector_obj)
+			for socket in self.sink_sockets:
+				try: 
+					socket.sendall(msg)
+				except:
+					#Broken Pipe error; Socket no longer connected
+					self.close_socket(socket, selector_obj)
+			for socket in self.src_sockets:
+				try: 
+					socket.sendall(msg)
+				except:
+					#Broken Pipe error; Socket no longer connected
+					self.close_socket(socket, selector_obj)
 			self.close()
 
 		#Data is not empty or kill switch. Check to see where data came from and where it should go
