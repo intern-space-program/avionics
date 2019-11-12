@@ -523,7 +523,7 @@ camera.framerate = frame_rate
 
 #Network Setup
 SERVER_IP = '73.136.139.198'
-SERVER_IP = '192.168.0.183'
+SERVER_IP = '10.0.0.116'
 SERVER_VIDEO_PORT = 5000
 SERVER_TELEM_PORT = 5001
 

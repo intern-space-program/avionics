@@ -130,7 +130,7 @@ def parse_telemetry(telem_packets, data_point_buffer):
 	for packets in packet_list:
 		good_packet = False
 		try:
-			data = struct.unpack('>ii???????fffffffffh', packets)
+			data = struct.unpack('>ii???????ffffffffffh', packets)
 			if packets[51:53] == EOP:
 				good_packet = True
 			else:
@@ -144,7 +144,7 @@ def parse_telemetry(telem_packets, data_point_buffer):
 			status_list = [status_str[data[2]], status_str[data[3]], status_str[data[4]], status_str[data[5]], status_str[data[6]], status_str[data[7]], status_str[data[8]]]
 			pos_list = [data[9], data[10], data[11]]
 			vel_list = [data[12], data[13], data[14]]
-			orient_list = [data[15], data[16], data[17]]
+			orient_list = [data[15], data[16], data[17], data[18]]
 			new_data = data_point(data[0], data[1], status_list, pos_list, vel_list, orient_list)
 			#new_data.print_data_point()
 			data_point_buffer.append(new_data)
