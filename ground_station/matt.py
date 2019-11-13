@@ -5,6 +5,8 @@ from kivy.app import App
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
+from kivy.uix.button import Button
+
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  
 from kivy.uix.label import Label
@@ -131,11 +133,11 @@ def parse_telemetry(telem_packets, data_point_buffer):
 		good_packet = False
 		try:
 			data = struct.unpack('>ii???????ffffffffffh', packets)
-			if packets[51:53] == EOP:
+			if packets[55:57] == EOP:
 				good_packet = True
 			else:
 				print("End of Packet check failed")
-				print("\tPacket End: %s"%(packets[51:53]))
+				print("\tPacket End: %s"%(packets[55:57]))
 				print("\tEOP:		%s"%(EOP))
 		except:
 			print("BAD PACKET")
@@ -197,6 +199,16 @@ class Telemetry(GridLayout):
 	pass
 
 class Status(GridLayout):
+	def clearPlot(instance):
+		instance.parent.clearPlot()
+	
+	def killStream(instance):
+		print("kill kill kill")
+		
+		
+	def startStream(instance):
+		print("Stream Starting")
+
 	def update(self, fIMU, fGPS, fALT, fTeensy, fRaspi, fLTE, fSerial):
 		self.ids.IMU.text = fIMU
 		self.ids.GPS.text = fGPS
@@ -237,11 +249,15 @@ class MyGrid(GridLayout):
 	stat = None
 	(ox,oy,oz) = (0,0,0)
 	#data_point_buffer = []
-
+	def clearPlot(self):
+		self.plot.ax.clear()
+		self.plot.fig.canvas.draw_idle()
+		print("clear")
 	def build(self):
 		self.tel = Telemetry()
 		self.plot = Plot(cols = 1)
 		self.stat = Status()
+
 		self.add_widget(Video())
 		self.add_widget(self.plot.addPlot())
 		self.add_widget(self.tel)
