@@ -18,7 +18,7 @@
 #include <utility/imumaths.h>
 #include <Adafruit_GPS.h>
 
-#define piSerial Serial //PI SERIAL IS CONNECTED TO TX2/RX2 PORTS!!!!! 
+#define piSerial Serial2 //#PI SERIAL IS CONNECTED TO TX2/RX2 PORTS!!!!! 
 #define GPSSerial Serial1
 
 //___________________________Global Assignments_________________________________//
@@ -26,11 +26,13 @@
 //General Assignments ....................
 int packetNo = 0;
 int json_packet_size = 500;
+int minimum_calibration_time = 30000;  //milliseconds
+int maximum_calibration_time = 60000;  //milliseconds
 
 // Flags to tell if the BNO, BMP, and GPS sensors are connected
-bool BNO_CONNECTED;
-bool BMP_CONNECTED;
-bool GPS_CONNECTED;
+volatile bool BNO_CONNECTED;
+volatile bool BMP_CONNECTED;
+volatile bool GPS_CONNECTED;
 
 uint32_t timer = millis(); // A timer used to determine when to sample the sensors
 
@@ -66,6 +68,9 @@ void check_for_bmp_status();
 void set_up_imu();
 void initial_hand_shake_sequence();
 void final_hand_shake_sequence();
+void pull_data_and_serialize();
+
+
 //________________________________________________________________________________//
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -76,7 +81,9 @@ void setup(void)
   piSerial.begin(115200);
   piSerial.print("dump_init");
 
-  //initial_hand_shake_sequence();
+  initial_hand_shake_sequence();
+
+  int calibration_timeout = millis();
 
   set_up_imu();
 
@@ -86,8 +93,21 @@ void setup(void)
 
   set_up_gps();
 
-  //final_hand_shake_sequence();
-} 
+  
+
+  while (((millis()-calibration_timeout) < minimum_calibration_time) || (!BMP_CONNECTED) || (!BNO_CONNECTED) || (!GPS_CONNECTED)) {
+    if ((millis() - calibration_timeout) > maximum_calibration_time) {
+      break; 
+    }
+    pull_data();
+
+  } // while loop
+
+    final_hand_shake_sequence();
+} // void loop
+  
+
+
 
 void loop(void) {
 
@@ -373,3 +393,45 @@ void initial_hand_shake_sequence()
     }
   }
 }
+
+void pull_data(){
+  
+  sample_GPS();
+
+  /* if millis() or timer wraps around, we'll just reset it
+     We don't want the timer to be bigger the clock timer on the processor. */
+  if (timer > millis())
+  {
+    timer = millis();
+  }
+
+  /////////////////////////////////////////////////////////////////////////////////// 
+  //  READ SENSORS AND SEND DATA AT 10Hz. (Every 100 milliseconds)
+  ///////////////////////////////////////////////////////////////////////////////////
+  if (millis() - timer > 100) 
+  {
+    //_____________Reset Timer______________//
+    timer = millis(); // reset the timer
+ 
+    //___________Create JSON Object__________// 
+    StaticJsonDocument<500> doc; //PACKET SIZE = 550
+
+    //___________Create JSON Arrays__________//
+    JsonArray hdr = doc.createNestedArray("hdr"); //create the Json Object
+    JsonArray tpa = doc.createNestedArray("tpa");
+    JsonArray imu = doc.createNestedArray("imu");
+    JsonArray gps = doc.createNestedArray("gps");
+
+    tpa = fill_in_bmp_array(tpa);
+
+    imu = fill_in_bno_array(imu);
+
+    gps = fill_in_gps_array(gps);
+
+    set_sensor_status_flags(gps, imu, tpa);
+
+    hdr = fill_in_hdr_array(hdr);
+
+    packetNo++;
+  } // timer
+} // function
