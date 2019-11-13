@@ -327,6 +327,8 @@ class client_stream:
 				self.close(selector_obj)
 				return "kill"
 			self.stream_print("%s: New Packet | Size: %d Bytes"%(self.name, len(packet)))
+			if self.name == 'TELEMETRY':
+				self.stream_print(packet)
 			self.read_buffer.write(packet)
 			self.recv_packet_cnt += 1
 			self.recv_total_bytes += len(packet)
