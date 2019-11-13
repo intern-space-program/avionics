@@ -1,0 +1,13 @@
+pip install kivy
+pip install matplotlib
+pip3 install matplotlib
+pip install https://github.com/kivy-garden/graph/archive/master.zip
+python3 -m pip install https://github.com/kivy-garden/graph/archive/master.zip
+pip install kivy-garden
+garden install graph
+garden install matplotlib
+
+[IF NEEDED]
+pip install pygame
+pip install bcm
+
