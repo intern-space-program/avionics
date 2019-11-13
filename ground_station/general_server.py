@@ -147,24 +147,23 @@ class server_stream:
 		self.alive = False
 	
 	def close_socket(self, socket_obj, selector_obj):
-		for socket in self.undeclared_sockets:
-			if socket_obj == socket:
-				self.undeclared_sockets.remove(socket_obj)
-				selector_obj.unregister(socket_obj)
-				socket_obj.close()
-				return
-		for socket in self.sink_sockets:
-			if socket_obj == socket:
-				self.undeclared_sockets.remove(socket_obj)
-				selector_obj.unregister(socket_obj)
-				socket_obj.close()
-				return
-		for socket in self.src_sockets:
-			if socket_obj == socket:
-				self.undeclared_sockets.remove(socket_obj)
-				selector_obj.unregister(socket_obj)
-				socket_obj.close()
-				return
+		if socket_obj in self.undeclared_sockets:
+			self.undeclared_sockets.remove(socket_obj)
+			selector_obj.unregister(socket_obj)
+			socket_obj.close()
+			return
+		elif socket_obj in self.sink_sockets:
+			self.sink_sockets.remove(socket_obj)
+			selector_obj.unregister(socket_obj)
+			socket_obj.close()
+			return
+		elif socket_obj in self.src_sockets:
+			self.src_sockets.remove(socket_obj)
+			selector_obj.unregister(socket_obj)
+			socket_obj.close()
+			return
+		else:
+			pass
 
 	def close_file(self, mode):
 		if (mode & SRC2SINK == SRC2SINK):
@@ -285,6 +284,7 @@ class server_stream:
 	def recv_new_packet(self, socket_obj, selector_obj):
 		if (not(self.alive)):
 			return
+		data_packet = b''
 		try:
 			data_packet = socket_obj.recv(4096)
 		except:
@@ -322,16 +322,15 @@ class server_stream:
 
 		#Data is not empty or kill switch. Check to see where data came from and where it should go
 		if socket_obj in self.undeclared_sockets:
-			search = "sink"
-			if data_packet.find(search.encode('utf-8')) != -1:
+			sink = b'sink'
+			src = b'src'
+			if (data_packet.find(sink) != -1):
 				#'Sink' is found with in raw byte stream
 				self.stream_print("Undeclared Socket (%s, %d) registering as SINK"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
 				self.undeclared_sockets.remove(socket_obj)
 				self.sink_sockets.append(socket_obj)
 				self.print_state()
-				
-			search = "src"
-			if data_packet.find(search.encode('utf-8')) != -1:
+			elif (data_packet.find(src) != -1):
 				self.stream_print("Undeclared Socket (%s, %d) registering as SRC"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
 				self.undeclared_sockets.remove(socket_obj)
 				self.src_sockets.append(socket_obj)
@@ -347,7 +346,7 @@ class server_stream:
 					
 			return
 			
-		if socket_obj in self.sink_sockets:
+		elif socket_obj in self.sink_sockets:
 			direction = SINK2SRC
 			self.add_to_buffer(data_packet, direction)
 			self.send_packet(data_packet, direction, selector_obj)
@@ -356,7 +355,7 @@ class server_stream:
 				self.clear_buffer(direction)
 			return
 
-		if socket_obj in self.src_sockets:
+		elif socket_obj in self.src_sockets:
 			direction = SRC2SINK
 			self.add_to_buffer(data_packet, direction)
 			self.send_packet(data_packet, direction, selector_obj)
@@ -364,6 +363,8 @@ class server_stream:
 				self.store_buffer(direction)
 				self.clear_buffer(direction)
 			return
+		else:
+			pass
 		
 		
 
