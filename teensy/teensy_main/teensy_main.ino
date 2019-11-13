@@ -95,7 +95,7 @@ void setup(void)
 
   
 
-  while (((millis()-calibration_timeout) < minimum_calibration_time) || (!BMP_CONNECTED) || (!BNO_CONNECTED) || (!GPS_CONNECTED)) {
+  while ((!BMP_CONNECTED) || (!BNO_CONNECTED) || (!GPS_CONNECTED)) {
     if ((millis() - calibration_timeout) > maximum_calibration_time) {
       break; 
     }
