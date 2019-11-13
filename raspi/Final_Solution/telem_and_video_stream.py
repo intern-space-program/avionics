@@ -123,7 +123,7 @@ class client_stream:
 			return
 		log_start("%s: %s"%(self.name, msg))
 	
-	def force_bytes(msg):
+	def force_bytes(self, msg):
 		if isinstance(msg, bytes):
 			return msg
 		elif isinstance(msg, str):
@@ -335,10 +335,12 @@ class client_stream:
 		sel = selectors.DefaultSelector()
 		events = selectors.EVENT_READ|selectors.EVENT_WRITE
 		sel.register(self.socket_obj, events, data="onlyDamnSocket")
+		last_time = int(time_out)
 		while(time_diff < time_out):
-			events = sel.select(timeout = 0.2)
+			events = sel.select(timeout = 1.0)
 			for key, mask in events:
-				if key.data == "onlyDamnSocket" and mask == selectors.EVENT_READ|selectors.EVENT_WRITE: 
+				if key.data == "onlyDamnSocket" and mask == selectors.EVENT_READ|selectors.EVENT_WRITE:
+					self.stream_print("EVENT FOUND") 
 					packet = self.socket_obj.recv(4096)
 					if (not(packet)):
 						self.stream_print("Stream ended, storing, then closing connection and file")
@@ -346,13 +348,16 @@ class client_stream:
 						self.close_socket()
 						return
 					search = "turn you on"
+					self.stream_print("Packet Has data") 
 					if packet.find(search.encode('utf-8')) != -1:
 						self.stream_print("STARTUP FOUND!")
-						break
+						return
 			time_diff = time.time()-start
-			msg = "Time left till automatic start; %.2f"%(time_out-time_diff)
-			self.stream_print(msg)
-			self.send_packet(msg.encode('utf-8'))
+			if int(time_diff) != last_time:
+				msg = "Time left till automatic start; %.2f"%(time_out-time_diff)
+				self.stream_print(msg)
+				self.send_packet(msg.encode('utf-8'))
+				last_time = int(time_diff)
 		return
 			
 
@@ -480,8 +485,9 @@ class teensy_handle:
 #======================= Global Variables and Objects =================
 vid_record_file = store_dir + '/video_stream.h264' #on-board file video is stored to
 telem_record_file = store_dir + '/telemtry_stream.txt'
+telem_cmd_file = store_dir + '/telemetry_cmds.txt'
 bitrate_max = 200000 # bits per second
-record_time = 30 # Time in seconds that the recording runs for
+record_time = 60 # Time in seconds that the recording runs for
 record_chunk = 0.12 #chunk size in seconds video object is broken into and sent 
 frame_rate = 15 #camera frame rate
 interrupt_bool = False #global interrupt flag that ends recording/program
@@ -504,8 +510,9 @@ SERVER_VIDEO_PORT = 5000
 SERVER_TELEM_PORT = 5001
 
 #Create stream objects for video and telemetry
+#def __init__(self, name, server_IP, server_port, read_store_file, write_store_file, mode):
 video_stream = client_stream("VIDEO", SERVER_IP, SERVER_VIDEO_PORT, None, vid_record_file, STREAM_WRITE)
-telem_stream = client_stream("TELEMETRY", SERVER_IP, SERVER_TELEM_PORT, None, telem_record_file, STREAM_WRITE|STREAM_READ)
+telem_stream = client_stream("TELEMETRY", SERVER_IP, SERVER_TELEM_PORT, telem_cmd_file, telem_record_file, STREAM_WRITE|STREAM_READ)
 
 #Create Selector object to allow for non-blocking read of telemetry port
 main_sel = selectors.DefaultSelector()
@@ -603,7 +610,7 @@ teensy.start_up()
 
 #Wait for startup signal from server
 if (telem_stream.alive):
-	telem_stream.wait_for_start(20) #value here is the timeout
+	telem_stream.wait_for_start(40) #value here is the timeout
 
 print("STARTING STREAM")	
 
@@ -626,16 +633,16 @@ while not(interrupt_bool): #TODO while (telem_stream or video_stream or {rocket 
 	#Look at selector for any events then move on to rest:
 	events = main_sel.select(timeout=0.1)
 	for key, mask in events:
-		if key.data = "Telem_upstream" and mask == mask == selectors.EVENT_READ | selectors.EVENT_WRITE:
+		if ((key.data == "Telem_upstream") and (mask == selectors.EVENT_READ|selectors.EVENT_WRITE)):
 			res = telem_stream.recv_new_packet()
 			if isinstance(res, str):
 				if res == "kill":
-					print("KILL SWITCH RECIEVED -> CLOSING STREAMS AND ENDING PROGRAM"):
+					print("KILL SWITCH RECIEVED -> CLOSING STREAMS AND ENDING PROGRAM")
 					#telem_sock already closed by this point
 					#echo kill statement on video stream and close stream
 					video_stream.send_packet(b'KILL STREAM')
 					video_stream.close()
-					break
+					interrupt_bool = False
 	
 	#pull in new packet from teensy (TIMEOUT IS EVERY 0.1 SECONDS SO THIS WILL BLOCK FOR AT LEAST 0.1s)
 	new_JSON = teensy.read_in_json()
@@ -695,10 +702,10 @@ while not(interrupt_bool): #TODO while (telem_stream or video_stream or {rocket 
 #======================================================================================
 #check to see if telem stream or video stream are still open, and if so close/echo kill
 if (video_stream):
-	video_stream.send_packet(b'KILL STREAM')
+	#video_stream.send_packet(b'KILL STREAM')
 	video_stream.close()
 if (telem_stream):
-	video_stream.send_packet(b'KILL STREAM')
+	#video_stream.send_packet(b'KILL STREAM')
 	video_stream.close()
 
 #End Recording and Tidy Up
