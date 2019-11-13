@@ -18,7 +18,7 @@
 #include <utility/imumaths.h>
 #include <Adafruit_GPS.h>
 
-#define piSerial Serial2 #PI SERIAL IS CONNECTED TO TX2/RX2 PORTS!!!!! 
+#define piSerial Serial //PI SERIAL IS CONNECTED TO TX2/RX2 PORTS!!!!! 
 #define GPSSerial Serial1
 
 //___________________________Global Assignments_________________________________//
@@ -76,7 +76,7 @@ void setup(void)
   piSerial.begin(115200);
   piSerial.print("dump_init");
 
-  initial_hand_shake_sequence();
+  //initial_hand_shake_sequence();
 
   set_up_imu();
 
@@ -86,7 +86,7 @@ void setup(void)
 
   set_up_gps();
 
-  final_hand_shake_sequence();
+  //final_hand_shake_sequence();
 } 
 
 void loop(void) {
