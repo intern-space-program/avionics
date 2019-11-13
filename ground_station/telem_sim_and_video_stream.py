@@ -189,7 +189,7 @@ class rocket:
 			packet_bytes += bytearray(struct.pack('>???????', 1,0,1,1,0,1,1))
 			packet_bytes += bytearray(struct.pack('>fff', self.position[0][0], self.position[0][1], self.position[0][2]))
 			packet_bytes += bytearray(struct.pack('>fff', self.position[1][0], self.position[1][1], self.position[1][2]))
-			packet_bytes += bytearray(struct.pack('>fff', self.angle[0][0], self.angle[0][1], self.angle[0][2]))
+			packet_bytes += bytearray(struct.pack('>ffff', self.angle[0][0], self.angle[0][1], self.angle[0][2], 0.0))
 			packet_bytes += bytearray([237,12]) #0xED0C in hex (END OF PACKET)
 			return packet_bytes
 		else:
@@ -523,7 +523,7 @@ camera.framerate = frame_rate
 
 #Network Setup
 SERVER_IP = '73.136.139.198'
-SERVER_IP = '10.0.0.116'
+SERVER_IP = '10.0.0.223'
 SERVER_VIDEO_PORT = 5000
 SERVER_TELEM_PORT = 5001
 
