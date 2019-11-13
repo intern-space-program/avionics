@@ -26,8 +26,7 @@
 //General Assignments ....................
 int packetNo = 0;
 int json_packet_size = 500;
-int minimum_calibration_time = 30000;  //milliseconds
-int maximum_calibration_time = 60000;  //milliseconds
+int maximum_calibration_time = 30000;  //milliseconds
 
 // Flags to tell if the BNO, BMP, and GPS sensors are connected
 volatile bool BNO_CONNECTED;
@@ -86,28 +85,24 @@ void setup(void)
   int calibration_timeout = millis();
 
   set_up_imu();
-
   check_for_bmp_status();
 
   set_up_bmp();
 
   set_up_gps();
 
-  
-
-  while (((millis()-calibration_timeout) < minimum_calibration_time) || (!BMP_CONNECTED) || (!BNO_CONNECTED) || (!GPS_CONNECTED)) {
-    if ((millis() - calibration_timeout) > maximum_calibration_time) {
+  piSerial.print("Starting Calibration");
+  while ( (!BMP_CONNECTED) || (!BNO_CONNECTED) || (!GPS_CONNECTED) ) 
+  {
+    if ((millis() - calibration_timeout) > maximum_calibration_time) 
       break; 
-    }
+      
     pull_data();
-
   } // while loop
-
-    final_hand_shake_sequence();
-} // void loop
   
-
-
+  piSerial.print("Calibration Finished");
+  final_hand_shake_sequence();
+} // void loop
 
 void loop(void) {
 
@@ -388,7 +383,8 @@ void initial_hand_shake_sequence()
    while (1){
     while(!piSerial.available());
     if (piSerial.find("startup")){
-      Serial.println("starting");
+      delay(100);
+      piSerial.println("starting");
       break;
     }
   }
