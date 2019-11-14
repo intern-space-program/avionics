@@ -4,8 +4,9 @@ from io import BytesIO
 import types
 import struct
 import os
+import time
 
-home = '/home/pi'
+home = '/home/ronnie'
 store_dir = home + "/rocket_data"
 cmd = "mkdir " + store_dir
 os.system(cmd)
@@ -24,13 +25,27 @@ class server_stream:
 		self.server_IP = server_IP
 		self.server_port = server_port
 		self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+		#List of socket objects in different registration bins
 		self.undeclared_sockets = []
 		self.sink_sockets = []
 		self.src_sockets = []
+		self.usernames = [] #dictionary where socket_obj is key, and name/position is 
+		#TODO Functions: 
+		#	1.collect usernames 
+		#	2. update usernames 
+		#	3. send list on request
+		#TODO Functionality: 
+		#	1.enforce name submission before allowed to register 
+		#	2. add objects to Dict when connect 
+		#	3. Remove from dict when leave 4. Notify all users when one has left
+		
 		self.src2sink_file = src2sink_file
 		self.sink2src_file = sink2src_file
 		self.mode = mode #can be SRC2SINK, SINK2SRC, or DUPLEX (SRC2SINK|SINK2SRC)
 		self.buffer_thresh = buffer_thresh
+		self.server_kill_requestor = None
+		self.kill_request_time = None
 		self.downstream_file = False
 		self.upstream_file = False
 		self.print_output = True #Controls Formatted output to the screen
@@ -81,6 +96,13 @@ class server_stream:
 		if (not(self.log_output)):
 			return
 		log_start("%s: %s"%(self.name, msg))
+
+	def print_socket(self, socket):
+		try:
+			return " (%s, %d)"%(socket.getpeername()[0], socket.getpeername()[1])
+		except:
+			self.stream_print("CANNOT RESOLVE PEER")
+			return ""
 	
 	def print_state(self):
 		if (not(self.print_output)):
@@ -91,17 +113,17 @@ class server_stream:
 		cnt = 0
 		for sockets in self.undeclared_sockets:
 			cnt += 1
-			print("\t\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
+			print("\t\t%d:"%(cnt), self.print_socket(sockets))
 		print("\tSINK Sockets:       %d"%(len(self.sink_sockets)))
 		cnt = 0
 		for sockets in self.sink_sockets:
 			cnt += 1
-			print("\t\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
+			print("\t\t%d:"%(cnt), self.print_socket(sockets))
 		print("\tSRC Sockets:        %d"%(len(self.src_sockets)))
 		cnt = 0
 		for sockets in self.src_sockets:
 			cnt += 1
-			print("\t\t%d: (%s, %d)"%(cnt, sockets.getsockname()[0], sockets.getsockname()[1]))
+			print("\t\t%d:"%(cnt), self.print_socket(sockets))
 
 	def claim_socket(self, socket_obj):
 		for socket in self.undeclared_sockets:
@@ -126,65 +148,6 @@ class server_stream:
 		client_sock.sendall(b'Please register as "sink" or "src"')
 		self.print_state()
 
-	def close(self):
-		self.stream_print("RUNNING FULL CLOSE")
-		if (not(self.mode & SRC2SINK)):
-			pass
-		else:
-			self.store_buffer(SRC2SINK)
-			self.clear_buffer(SRC2SINK)
-			self.close_file(SRC2SINK)
-
-		if (not(self.mode & SINK2SRC)):
-			pass
-		else:
-			self.store_buffer(SINK2SRC)
-			self.clear_buffer(SINK2SRC)
-			self.close_file(SINK2SRC)
-
-		self.stream_print("Closing Server Socket")
-		self.server_socket.close()
-		self.alive = False
-	
-	def close_socket(self, socket_obj, selector_obj):
-		if socket_obj in self.undeclared_sockets:
-			self.undeclared_sockets.remove(socket_obj)
-			selector_obj.unregister(socket_obj)
-			socket_obj.close()
-			return
-		elif socket_obj in self.sink_sockets:
-			self.sink_sockets.remove(socket_obj)
-			selector_obj.unregister(socket_obj)
-			socket_obj.close()
-			return
-		elif socket_obj in self.src_sockets:
-			self.src_sockets.remove(socket_obj)
-			selector_obj.unregister(socket_obj)
-			socket_obj.close()
-			return
-		else:
-			pass
-
-	def close_file(self, mode):
-		if (mode & SRC2SINK == SRC2SINK):
-			if (not(self.mode & SRC2SINK)):
-				self.stream_print("DOWNSTREAM ACCESS DENIED")
-				return
-			if(not(self.downstream_file)):
-				return
-			self.stream_print("Closing DOWNSTREAM File")
-			self.src2sink_file_handle.close()
-			self.downstream_file = False
-
-		if (mode & SINK2SRC == SINK2SRC):
-			if (not(self.mode & SINK2SRC)):
-				self.stream_print("UPSTREAM ACCESS DENIED")
-				return
-			if(not(self.upstream_file)):
-				return
-			self.stream_print("Closing UPSTREAM File")
-			self.sink2src_file_handle.close()
-			self.upstream_file = False
 
 	def store_buffer(self, mode):
 		if (mode & SRC2SINK == SRC2SINK):
@@ -254,6 +217,68 @@ class server_stream:
 			self.stream_print("Adding to SINK2SRC Buffer")
 			self.sink2src_buffer.write(msg)
 	
+	def close(self):
+		self.stream_print("RUNNING FULL CLOSE")
+		if (not(self.mode & SRC2SINK)):
+			pass
+		else:
+			self.store_buffer(SRC2SINK)
+			self.clear_buffer(SRC2SINK)
+			self.close_file(SRC2SINK)
+
+		if (not(self.mode & SINK2SRC)):
+			pass
+		else:
+			self.store_buffer(SINK2SRC)
+			self.clear_buffer(SINK2SRC)
+			self.close_file(SINK2SRC)
+		
+		self.stream_print("Closing Server Socket")
+		self.server_socket.close()
+		self.alive = False
+		self.print_state()
+	
+	def close_socket(self, socket_obj, selector_obj):
+		if socket_obj in self.undeclared_sockets:
+			self.undeclared_sockets.remove(socket_obj)
+			selector_obj.unregister(socket_obj)
+			socket_obj.close()
+			return
+		elif socket_obj in self.sink_sockets:
+			self.sink_sockets.remove(socket_obj)
+			selector_obj.unregister(socket_obj)
+			socket_obj.close()
+			return
+		elif socket_obj in self.src_sockets:
+			self.src_sockets.remove(socket_obj)
+			selector_obj.unregister(socket_obj)
+			socket_obj.close()
+			return
+		else:
+			self.stream_print("ERROR SOCKET TO REMOVE NOT FOUND!!! Nothing to do")
+			return
+
+	def close_file(self, mode):
+		if (mode & SRC2SINK == SRC2SINK):
+			if (not(self.mode & SRC2SINK)):
+				self.stream_print("DOWNSTREAM ACCESS DENIED")
+				return
+			if(not(self.downstream_file)):
+				return
+			self.stream_print("Closing DOWNSTREAM File")
+			self.src2sink_file_handle.close()
+			self.downstream_file = False
+
+		if (mode & SINK2SRC == SINK2SRC):
+			if (not(self.mode & SINK2SRC)):
+				self.stream_print("UPSTREAM ACCESS DENIED")
+				return
+			if(not(self.upstream_file)):
+				return
+			self.stream_print("Closing UPSTREAM File")
+			self.sink2src_file_handle.close()
+			self.upstream_file = False
+	
 	def send_packet(self, msg, direction, selector_obj):
 		if (direction & SRC2SINK == SRC2SINK):
 			if (not(self.mode & SRC2SINK)):
@@ -280,7 +305,81 @@ class server_stream:
 					self.close_socket(socket, selector_obj)
 					
 
+	def kill_network(self, selector_obj):
+		#kill switch for whole network -> ends Server [OPTIONAL] and all clients
+		self.stream_print("KILL SWITCH RECIEVED. NOTIFYING ALL SINKS AND SOURCES")
+		msg = b'KILL STREAM'
+		self.stream_print("\tNotifiying %d UNDECLARED sockets and removing"%(len(self.undeclared_sockets)))
+		while (len(self.undeclared_sockets) > 0):
+			socket = self.undeclared_sockets[0]
+
+			try: 
+				socket.sendall(msg)
+			except:
+				self.stream_print("ERROR NOTIFYING" + self.print_socket() + " -> BROKEN PIPE ON THEIR END")
+
+			self.close_socket(socket, selector_obj)
+		self.stream_print("\tNotifiying %d SINK       sockets and removing"%(len(self.sink_sockets)))
+		while (len(self.sink_sockets) > 0):
+			socket = self.sink_sockets[0]
+
+			try: 
+				socket.sendall(msg)
+			except:
+				self.stream_print("ERROR NOTIFYING" + self.print_socket() + " -> BROKEN PIPE ON THEIR END")
+
+			self.close_socket(socket, selector_obj)
+		self.stream_print("\tNotifiying %d SOURCE     sockets and removing"%(len(self.src_sockets)))
+		while (len(self.src_sockets) > 0):
+			socket = self.src_sockets[0]
+			try: 
+				socket.sendall(msg)
+			except:
+				self.stream_print("ERROR NOTIFYING" + self.print_socket() + " -> BROKEN PIPE ON THEIR END")
+
+			self.close_socket(socket, selector_obj)
+
+		if (not(self.mode & SRC2SINK)):
+			pass
+		else:
+			self.store_buffer(SRC2SINK)
+			self.clear_buffer(SRC2SINK)
+
+		if (not(self.mode & SINK2SRC)):
+			pass
+		else:
+			self.store_buffer(SINK2SRC)
+			self.clear_buffer(SINK2SRC)
 		
+		self.print_state()
+	
+	def intiate_kill(self, socket_obj, selector_obj):
+		if self.server_kill_requestor is None:
+			self.server_kill_requestor = socket_obj
+			try:
+				socket_obj.sendall(b'SERVER KILL INITIATED -> This will take down the entire network AND SERVER, enter "yes" to proceed')
+				self.kill_request_time = time.time()
+			except:
+				self.close_socket(socket_obj, selector_obj)
+				self.server_kill_requestor = None
+
+	def kill_server(self, socket_obj, selector_obj):
+		if self.server_kill_requestor is None:
+			return
+		if socket_obj == self.server_kill_requestor:	
+			if (time.time() - self.kill_request_time > 5):
+				try:
+					socket_obj.sendall(b'SERVER KILL REQUEST TIMED OUT -> INITIATE AGAIN')
+				except:
+					self.close_socket(socket_obj, selector_obj)
+				
+				self.server_kill_requestor = None
+			else:
+				
+				self.kill_network(selector_obj)
+				self.close()
+				
+
 	def recv_new_packet(self, socket_obj, selector_obj):
 		if (not(self.alive)):
 			return
@@ -288,55 +387,45 @@ class server_stream:
 		try:
 			data_packet = socket_obj.recv(4096)
 		except:
-			self.stream_print("ERROR READING FROM (%s, %d)"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
+			self.stream_print("ERROR READING FROM" + self.print_socket(socket_obj))
+			return
 		if (not(data_packet)):
 			#Data is empty; socket closed by them
-			self.stream_print("Empty data recieved, closing socket to (%s, %d)"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
+			self.stream_print("Empty data recieved, closing socket to" + self.print_socket(socket_obj))
 			self.close_socket(socket_obj, selector_obj)
 			self.print_state()
 			return
-		search = "KILL STREAM"
-		if data_packet.find(search.encode('utf-8')) != -1:
-				#kill switch for whole network -> ends Server and all clients
-				self.stream_print("KILL SWITCH RECIEVED. NOTIFYING ALL SINKS AND SOURCES")
-				msg = b'KILL STREAM'
-				for socket in self.undeclared_sockets:
-					try: 
-						socket.sendall(msg)
-					except:
-						#Broken Pipe error; Socket no longer connected
-						self.close_socket(socket, selector_obj)
-				for socket in self.sink_sockets:
-					try: 
-						socket.sendall(msg)
-					except:
-						#Broken Pipe error; Socket no longer connected
-						self.close_socket(socket, selector_obj)
-				for socket in self.src_sockets:
-					try: 
-						socket.sendall(msg)
-					except:
-						#Broken Pipe error; Socket no longer connected
-						self.close_socket(socket, selector_obj)
-				self.close()
+		network_kill = "KILL STREAM"
+		server_kill = "KiLl S3rVer"
+		confirm_kill = "yes"
+		if data_packet.find(network_kill.encode('utf-8')) != -1:
+				self.kill_network(selector_obj)
+				return
+		
+		if data_packet.find(server_kill.encode('utf-8')) != -1:
+				self.intiate_kill(socket_obj, selector_obj)
+				return
 
+		if data_packet.find(confirm_kill.encode('utf-8')) != -1:
+				self.kill_server(socket_obj, selector_obj)
+		
 		#Data is not empty or kill switch. Check to see where data came from and where it should go
 		if socket_obj in self.undeclared_sockets:
 			sink = b'sink'
 			src = b'src'
 			if (data_packet.find(sink) != -1):
 				#'Sink' is found with in raw byte stream
-				self.stream_print("Undeclared Socket (%s, %d) registering as SINK"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
+				self.stream_print("Undeclared Socket" + self.print_socket(socket_obj) + " registering as SINK")
 				self.undeclared_sockets.remove(socket_obj)
 				self.sink_sockets.append(socket_obj)
 				self.print_state()
 			elif (data_packet.find(src) != -1):
-				self.stream_print("Undeclared Socket (%s, %d) registering as SRC"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
+				self.stream_print("Undeclared Socket" + self.print_socket(socket_obj) + " registering as SRC")
 				self.undeclared_sockets.remove(socket_obj)
 				self.src_sockets.append(socket_obj)
 				self.print_state()
 			else:
-				self.stream_print("UNRECOGNIZED DATA FROM UNDECLARED SOCKET (%s, %d)"%(socket_obj.getsockname()[0], socket_obj.getsockname()[1]))
+				self.stream_print("UNRECOGNIZED MESSAGE from undeclared socket " + self.print_socket(socket_obj))
 				return_msg = b'REGISTER PROCESS UNSUCCESSFUL -> unrecognized command. Check command and send again'
 				try:
 					socket_obj.sendall(return_msg)
