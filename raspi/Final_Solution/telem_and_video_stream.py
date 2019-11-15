@@ -320,7 +320,6 @@ class client_stream:
 			if packet.find(search.encode('utf-8')) != -1:
 				self.stream_print("KILL statement heard, doing full close")
 				self.log_print("KILL statement heard, doing full close")
-				self.close()
 				return "kill"
 			self.stream_print("%s: New Packet | Size: %d Bytes"%(self.name, len(packet)))
 			self.read_buffer.write(packet)
@@ -396,25 +395,26 @@ class teensy_handle:
 				self.connected = True
 				self.stream_print("Connected!")
 				self.log_print("Connected!")
+				return True
 			except:
 				connect_cnt += 1 
 				self.stream_print("Trying to Connect: Attempt #%d"%(connect_cnt))
 				if connect_cnt > 10:
 					self.stream_print("Not found, Unable to Connect")
 					self.log_print("Not found, Unable to Connect")
-					return
+					return False
 
 
-	def start_up(self):
+	def start_up(self, time_out):
 		if (not(self.connected)):
 			return
 		starting = False
 		self.stream_print("Starting Startup")
+		resp = b''
 		for i in range(0,5):
-			self.stream_print('Start_up Attempt %d'%(i))
 			self.ser.write(b'startup')
 			resp = self.ser.readline()
-			if b'starting' in resp:
+			if resp.find(b'starting') != -1:
 				starting = True
 				break
 		if (not(starting)):
@@ -424,12 +424,12 @@ class teensy_handle:
 		resp = b''
 		self.stream_print("Started and waiting for initialized from teensy")
 		start = time.time()
-		while(not(b'initialized' in resp)):
+		while(resp.find(b'initialized')):
 			#do error analysis of output in here
 			resp = self.ser.readline()
 			if resp:
 				self.stream_print(resp)
-			if time.time()-start > 10:
+			if time.time()-start > time_out:
 				self.log_print("ERROR Teensy Watch Dog Timed out")
 				self.stream_print("ERROR Teensy Watch Dog Timed out")
 				return
@@ -505,7 +505,7 @@ camera.framerate = frame_rate
 
 #Network Settings
 SERVER_IP = '73.136.139.198'
-SERVER_IP = '10.0.0.178'
+SERVER_IP = '73.115.48.151'
 SERVER_VIDEO_PORT = 5000
 SERVER_TELEM_PORT = 5001
 
@@ -584,6 +584,22 @@ def form_bin_packet(current_state, packet_cnt, status_list):
 	
 	#return binary packet
 	return packet_bytes
+
+def populate_status_list(status_list, JSON_packet, telem_stream_alive, video_stream_alive, teensy_alive):
+	#IMU, GPS, ALT, Teensy, Raspi, LTE, Serial
+	if JSON_packet is not(None):
+		status_list[1] = JSON_packet['hdr'][2] #GPS
+		status_list[2] = JSON_packet['hdr'][3] #ALT
+		status_list[0] = JSON_packet['hdr'][4] #IMU
+	
+	if (telem_stream_alive or video_stream_alive):
+		status_list[5] = True
+	else:
+		status_list[5] = False
+	if (teensy_alive):
+		status_list[3] = True
+	else:
+		status_list[3] = False
 	
 #======================== Video/Telemetry Streaming and Recording ============
 loop_cnt = 0.0
@@ -605,13 +621,15 @@ telem_stream.connect_to_server()
 
 #Connect to Teensy and do hand shake
 teensy = teensy_handle()
-teensy.connect()
-teensy.start_up()
+status_list[6] = teensy.connect()
+teensy.start_up(31)
 
 #Wait for startup signal from server
 if (telem_stream.alive):
 	telem_stream.wait_for_start(40) #value here is the timeout
 
+status_list[4] = True
+populate_status_list(status_list, None, telem_stream.alive, video_stream.alive, teensy.alive)
 print("STARTING STREAM")	
 
 #=================================== Offical Beginning of Stream -> Do all setup before this =============
@@ -619,7 +637,7 @@ print("STARTING STREAM")
 camera.start_recording(video_stream.write_buffer, format='h264', bitrate=bitrate_max)
 
 #Start timer threads
-threading.Timer(record_time, interrupt_func).start()
+#threading.Timer(record_time, interrupt_func).start()
 threading.Timer(record_chunk, store_interrupt_func).start()
 
 #Start dump of data from Teensy:
@@ -627,22 +645,19 @@ teensy.start_stream()
 
 program_start = time.time()
 
+ 
 #Main Program Loop
 while not(interrupt_bool): #TODO while (telem_stream or video_stream or {rocket has been up and back down to the ground for a significant amount of time} maybe use a class to carry this out
 
 	#Look at selector for any events then move on to rest:
-	events = main_sel.select(timeout=0.1)
+	events = main_sel.select(timeout=0.05)
 	for key, mask in events:
 		if ((key.data == "Telem_upstream") and (mask == selectors.EVENT_READ|selectors.EVENT_WRITE)):
 			res = telem_stream.recv_new_packet()
 			if isinstance(res, str):
 				if res == "kill":
 					print("KILL SWITCH RECIEVED -> CLOSING STREAMS AND ENDING PROGRAM")
-					#telem_sock already closed by this point
-					#echo kill statement on video stream and close stream
-					video_stream.send_packet(b'KILL STREAM')
-					video_stream.close()
-					interrupt_bool = False
+					interrupt_bool = True
 	
 	#pull in new packet from teensy (TIMEOUT IS EVERY 0.1 SECONDS SO THIS WILL BLOCK FOR AT LEAST 0.1s)
 	new_JSON = teensy.read_in_json()
@@ -653,6 +668,7 @@ while not(interrupt_bool): #TODO while (telem_stream or video_stream or {rocket 
 		#New JSON from teensy -> use information to propagate state and any other essential values
 		current_state = get_new_state(current_state, new_JSON, previous_millis)
 		previous_millis = new_JSON["hdr"][1]
+		populate_status_list(status_list, new_JSON, telem_stream.alive, video_stream.alive, teensy.alive)
 		packet_Bytes = form_bin_packet(current_state, new_JSON["hdr"][0], status_list)
 		
 	if (packet_Bytes):
@@ -702,10 +718,10 @@ while not(interrupt_bool): #TODO while (telem_stream or video_stream or {rocket 
 #======================================================================================
 #check to see if telem stream or video stream are still open, and if so close/echo kill
 if (video_stream):
-	#video_stream.send_packet(b'KILL STREAM')
+	video_stream.send_packet(b'KILL STREAM')
 	video_stream.close()
 if (telem_stream):
-	#video_stream.send_packet(b'KILL STREAM')
+	video_stream.send_packet(b'KILL STREAM')
 	video_stream.close()
 
 #End Recording and Tidy Up

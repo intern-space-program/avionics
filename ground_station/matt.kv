@@ -17,7 +17,7 @@
         font_size: '25sp'
     Label:
         id:alt
-        text:'Telemetry'
+        text:'N/A'
         halign: 'right'
         valign: 'middle'
         text_size: self.size
@@ -37,7 +37,7 @@
         font_size: '25sp'
     Label:
         id:pos
-        text:'Telemetry'
+        text:'N/A'
         halign: 'right'
         text_size: self.size
         valign: 'middle'
@@ -56,7 +56,7 @@
         font_size: '25sp'
     Label:
         id:vel
-        text:'Telemetry'
+        text:'N/A'
         halign: 'right'
         text_size: self.size
         valign: 'middle'
@@ -123,8 +123,9 @@
         text:'BAD'
         font_size: '25sp'
         color: 1,0,0,1
-    Label:
-        text:''
+    Button:
+        text:'Start Stream'
+        on_press: root.startStream()
     Label:
         text: ''
     Label:
@@ -133,8 +134,9 @@
     Label:
         text:'Serial'
         font_size: '25sp'
-    Label:
-        text:''
+    Button:
+        text:'Clear Plot'
+        on_press: root.clearPlot()
     Label:
         text:'Comms:'
         font_size: '25sp'
@@ -148,8 +150,9 @@
         text:'BAD'
         font_size: '25sp'
         color: 1,0,0,1
-    Label:
-        text:''
+    Button:
+        on_press: root.killStream(self)
+        text: 'Kill Stream'
 
 
 <Seperator>:

@@ -8,46 +8,37 @@ telem_sock_alive = True
 vid_sock_alive = True
 
 def get_user_input(vid_sock, telem_sock):
-	telem_sock_al = True
-	vid_sock_al = True
-	while vid_sock_al or telem_sock_al:
+	global telem_sock_alive
+	global vid_sock_alive
+	while True:
 		new_input = input("")
 		if new_input.find("vid") != -1:
 			new_input = new_input.replace("vid", "")
 			if new_input.find("kill") != -1:
 				vid_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
-				vid_sock_al = False
 			else:
 				try:
 					vid_sock.sendall(new_input.encode('utf-8'))
 					print("Message sent on VIDEO socket")
 				except:
-					vid_sock_al = False
+					vid_sock_alive = False
+					vid_sock.close()
 					
 		elif new_input.find("telem") != -1:
 			new_input = new_input.replace("telem", "")
 			if new_input.find("kill") != -1:
 				telem_sock.sendall(b'KILL STREAM')
 				print("Kill statement sent")
-				telem_sock_al = False
 			else:
 				try:
 					telem_sock.sendall(new_input.encode('utf-8'))
 					print("Message sent on TELEMETRY socket")
 				except:
-					telem_sock_al = False
+					telem_sock_alive = False
+					telem_sock.close()
 		else:
 			print("Invalid Command: please include 'vid' or 'telem' in message")
-	try:
-		vid_sock.close()
-	except:
-		pass
-	try:
-		telem_sock.close()
-	except:
-		pass
-	print("THREAD SHOULD BE ENDING HERE")
 	
 
 SERVER_IP = '10.0.0.178'
@@ -75,7 +66,7 @@ sel = selectors.DefaultSelector()
 sel.register(client_vid_sock, selectors.EVENT_READ|selectors.EVENT_WRITE, data = 'VIDEO')
 sel.register(client_telem_sock, selectors.EVENT_READ|selectors.EVENT_WRITE, data = 'TELEMETRY')
 
-message_send = threading.Thread(target = get_user_input, args = (client_vid_sock, client_telem_sock))
+message_send = threading.Thread(target = get_user_input, args = (client_vid_sock, client_telem_sock), daemon=True)
 message_send.start()
 print("Waiting for user input (specify 'vid' or 'telem' in message):\n")
 while vid_sock_alive or telem_sock_alive:
@@ -95,7 +86,7 @@ while vid_sock_alive or telem_sock_alive:
 					else:
 						search = "KILL STREAM"
 						if new_data.find(search.encode('utf-8')) != -1:
-							print("%s: Kill switch received -> Closing socket"%(key.data))
+							print("%s: KILL SWITCH RECIEVED -> CLOSING SOCKET"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
 							vid_sock_alive = False
@@ -120,7 +111,7 @@ while vid_sock_alive or telem_sock_alive:
 					else:
 						search = "KILL STREAM"
 						if new_data.find(search.encode('utf-8')) != -1:
-							print("%s: Kill switch received -> Closing socket"%(key.data))
+							print("%s: KILL SWITCH RECIEVED -> CLOSING SOCKET"%(key.data))
 							sel.unregister(socket_obj)
 							socket_obj.close()
 							telem_sock_alive = False
@@ -131,6 +122,7 @@ while vid_sock_alive or telem_sock_alive:
 				else:
 					sel.unregister(socket_obj)
 					socket_obj.close()
+print("Ending Program")
 
 
 
