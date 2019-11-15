@@ -91,19 +91,11 @@ void setup(void)
 
   set_up_gps();
 
-<<<<<<< HEAD
   piSerial.print("Starting Calibration");
-  while ( (!BMP_CONNECTED) || (!BNO_CONNECTED) || (!GPS_CONNECTED) ) 
-  {
-    if ((millis() - calibration_timeout) > maximum_calibration_time) 
-=======
-  
-
   while ((!BMP_CONNECTED) || (!BNO_CONNECTED) || (!GPS_CONNECTED)) {
     if ((millis() - calibration_timeout) > maximum_calibration_time) {
->>>>>>> 9960fd6f160472531b525ff79d35ca9abf476566
       break; 
-      
+    
     pull_data();
   } // while loop
   
