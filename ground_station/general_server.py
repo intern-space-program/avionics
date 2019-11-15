@@ -383,22 +383,12 @@ class server_stream:
 		msg = "UNDECLARED Sockets (%d): "%(len(self.undeclared_sockets))
 		for socket in self.undeclared_sockets:
 			msg += self.print_socket(socket)
-		
-		try:
-			socket_obj.sendall(msg.encode('utf-8'))
-		except:
-			self.close_socket(socket_obj, selector_obj)
 
-		msg = "SINK Sockets (%d): "%(len(self.sink_sockets))
+		msg += " | SINK Sockets (%d): "%(len(self.sink_sockets))
 		for socket in self.sink_sockets:
 			msg += self.print_socket(socket)
 
-		try:
-			socket_obj.sendall(msg.encode('utf-8'))
-		except:
-			self.close_socket(socket_obj, selector_obj)
-
-		msg = "SRC Sockets (%d): "%(len(self.src_sockets))
+		msg += " | SRC Sockets (%d): "%(len(self.src_sockets))
 		for socket in self.src_sockets:
 			msg += self.print_socket(socket)
 	
