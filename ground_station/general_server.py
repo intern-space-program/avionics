@@ -378,7 +378,25 @@ class server_stream:
 				
 				self.kill_network(selector_obj)
 				self.close()
-				
+
+	def query_users(self, socket_obj, selector_obj):
+		msg = ""
+		msg += "UNDECLARED Sockets (%d): "%(len(self.undeclared_sockets))
+		for socket in self.undeclared_sockets:
+			msg += self.print_socket(socket)
+
+		msg += " | SINK Sockets (%d): "%(len(self.undeclared_sockets))
+		for socket in self.sink_sockets:
+			msg += self.print_socket(socket)
+
+		msg += " | SRC Sockets (%d): "%(len(self.undeclared_sockets))
+		for socket in self.src_sockets:
+			msg += self.print_socket(socket)
+	
+		try:
+			socket_obj.sendall(msg.encode('utf-8'))
+		except:
+			self.close_socket(socket_obj, selector_obj)		
 
 	def recv_new_packet(self, socket_obj, selector_obj):
 		if (not(self.alive)):
@@ -398,6 +416,7 @@ class server_stream:
 		network_kill = "KILL STREAM"
 		server_kill = "KiLl S3rVer"
 		confirm_kill = "yes"
+		report_users = "users?"	
 		if data_packet.find(network_kill.encode('utf-8')) != -1:
 				self.kill_network(selector_obj)
 				return
@@ -408,6 +427,10 @@ class server_stream:
 
 		if data_packet.find(confirm_kill.encode('utf-8')) != -1:
 				self.kill_server(socket_obj, selector_obj)
+
+		if data_packet.find(report_users.encode('utf-8')) != -1:
+				self.query_users(socket_obj, selector_obj)
+				return
 		
 		#Data is not empty or kill switch. Check to see where data came from and where it should go
 		if socket_obj in self.undeclared_sockets:
