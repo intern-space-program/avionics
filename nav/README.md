@@ -6,7 +6,7 @@ Navigation ("Nav") takes in sensor measurements and the last known state of the 
 ## Use Instructions
 In the F2019 semester, the vehicle has the following set of sensors on board, with the specified data used:
 - GPS
-    - x, y, z position
+    - latitude, longitude, altitude (LLA) position
 - IMU
     - x, y, z conservative acceleration (includes gravity)
     - x, y, z non-conservative acceleration (gravity subtracted)
@@ -25,8 +25,8 @@ This should be compiled into a python dictionary with the following keys and val
     
 Nav returns a python dictionary with the following keys and values:
 - `time`: `float` The time at which the state's values were calculated
-- `position`: `numpy.array([1x3])` The x, y, z position
-- `velocity`: `numpy.array([1x3])` The x, y, z velocity
+- `position`: `numpy.array([1x3])` The x, y, z position (in ECEF frame)
+- `velocity`: `numpy.array([1x3])` The x, y, z velocity (in ECEF frame)
 - `attitude`: `numpy.array([1x4])` A scalar-first right-transform quaternion representing the coordinate transformation from the inertial frame (launchpad frame) to the current frame of the vehicle, effectively representing attitude
 
 NavMain.main should be called with the arguments:
