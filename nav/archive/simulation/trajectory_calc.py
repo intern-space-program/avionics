@@ -222,6 +222,3 @@ while (test_rocket):
 print("Simulation Ended")
 test_rocket.print_flight_metrics()
 print("PROGRAM TIME: %f s"%(time.time()-start_time))
-
-
-

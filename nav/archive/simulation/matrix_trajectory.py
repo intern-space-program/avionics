@@ -147,4 +147,3 @@ class rocket:
 
 		self.model = model_params()
 		self.print_each_step = False
-

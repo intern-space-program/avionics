@@ -190,16 +190,3 @@ while True:
 		ax.set_ylim3d(-1.0, 1.0)
 		ax.set_zlim3d(-1.0, 1.0)
 		plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-	 
