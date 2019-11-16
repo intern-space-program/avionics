@@ -78,10 +78,8 @@ def main_test():
 
     # TEST
     ret = init_state
-    print(ret)
     for sensor_output in sensor_outputs:
         ret = nav.NavMain.main(ret, sensor_output)
-        print(ret)
 
     # RESULTS
     need_to_pass = 4
