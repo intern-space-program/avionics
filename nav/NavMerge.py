@@ -1,5 +1,5 @@
 '''
-Filename: NavMerge.py
+File name: NavMerge.py
 Programmed by: Mike Bernard
 Date: 2019-11-08
 

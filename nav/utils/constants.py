@@ -1,3 +1,11 @@
+'''
+File name: constants.py
+Programmed by: Mike Bernard
+Date: 2019-11-16
+
+Provides constants used throughout multiple scripts.
+'''
+
 # Physical Constants
 G = 6.67408e-11  # (m**3/kg/s**2) gravitational constant
 

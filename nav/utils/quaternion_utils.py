@@ -1,10 +1,7 @@
 '''
 File name: quaternion_utils.py
-Created by: Mike Bernard
-Creator email: mike.bernard@uconn.edu
-Creation date: 2019-09-28
-
-Python version: 3.7.3
+Programmed by: Mike Bernard
+Date: 2019-09-28
 
 Tools for dealing with scalar-first, transform, unit,
 right quaternions with Malcolm Shuster's conventions.

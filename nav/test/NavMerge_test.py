@@ -1,8 +1,9 @@
 '''
-Unit Tests for NavMerge.py
-
+File name: NavMerge_test.py
 Programmed by: Mike Bernard
 Date: 2019-11-05
+
+Unit tests for NavMerge.py.
 '''
 
 from numpy import array, allclose

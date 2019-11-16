@@ -1,6 +1,5 @@
 '''
-Unit Tests for NavMain.py
-
+File name: NavMain_test.py
 Programmed by: Mike Bernard
 Date: 2019-11-05
 

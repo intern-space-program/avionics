@@ -1,3 +1,11 @@
+'''
+File name: frame_utils.py
+Programmed by: Mike Bernard
+Date: 2019-11-16
+
+Functions to convert between several different types of frames.
+'''
+
 from numpy import array, cos, sin, tan, arctan, deg2rad, sqrt
 from nav.utils.constants import *
 

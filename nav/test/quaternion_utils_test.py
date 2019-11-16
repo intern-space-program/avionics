@@ -2,6 +2,8 @@
 File name: quaternion_utils_test.py
 Programmed by: Mike Bernard
 Date: 2019-11-09
+
+Unit tests for quaternion_utils.py.
 '''
 
 from numpy import allclose
