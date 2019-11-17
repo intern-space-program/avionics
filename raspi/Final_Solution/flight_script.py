@@ -159,7 +159,7 @@ class client_stream:
 		self.server_IP = server_IP
 		self.server_port = server_port
 		self.socket_obj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.socket_obj.settimeout(1.2)
+		self.socket_obj.settimeout(3)
 		self.read_store_file = read_store_file
 		self.write_store_file = write_store_file
 		self.mode = mode #can be STREAM_READ, STREAM_WRTIE, or STREAM_READ|STREAM_WRITE
