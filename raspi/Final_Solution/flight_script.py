@@ -73,7 +73,6 @@ while cnt < 10:
 	time.sleep(0.2)
 	SERVER_led.off()
 
-print("Lights should have gone by here")
 
 home = '/home/pi'
 store_dir = home + "/rocket_data"
@@ -81,7 +80,6 @@ cmd = "mkdir " + store_dir
 os.system(cmd)
 
 log_file = store_dir + "/system_log.txt"
-log_handle = open(log_file, 'w')
 
 def get_time():
 	absolute_tm = time.localtime()
@@ -90,13 +88,16 @@ def get_time():
 	return str(absolute_tm[3]) + ":" + str(absolute_tm[4]) + ":" + str(absolute_tm[5]) + ":%.3f| "%(ms)
 
 def log_start(msg):
-	log_handle.write(("\n" + get_time() + msg))
+	with open(log_file, 'a') as log_writer:
+		log_writer.write(("\n" + get_time() + msg))
 
 absolute_tm = time.localtime()
 time_str = "Script Started at " + str(absolute_tm[3]) + ":" + str(absolute_tm[4]) + ":" + str(absolute_tm[5])
 time_str += " on " + str(absolute_tm[1]) + "/" + str(absolute_tm[2]) + "/" + str(absolute_tm[0])
 
+log_handle = open(log_file, 'w')
 log_handle.write(time_str)
+log_handle.close()
 
 #================================= CONFIGURE NETWORK ==========================================
 #Ouput messages
@@ -104,12 +105,15 @@ not_connected_msg = "ERROR: Modem not detected"
 fail_msg = "Failed to start PPP"
 success_msg = "PPP session started"
 
+LTE_led.blink()
 LTE_connected = False
 os.system("sudo hologram network disconnect -v")#make sure PPP connection does not exist
 LTE_timeout = 300 #5 minute timout
-LTE_led.blink()
 LTE_start = time.time()
 while (not(LTE_connected)):
+	if (time.time()-LTE_start)>LTE_timeout:
+		log_start("LTE CONNECTION ATTEMPT TIMED OUT")
+		break
 	log_start("Running Hologram Connect")
 	#print("Running Hologram Connect")
 	#Begin a subprocess to start PPP connection and connect LTE network
@@ -117,11 +121,6 @@ while (not(LTE_connected)):
 	while True:
 		out, err = LTE_connect.communicate()
 		output = str(out + err)
-		if (time.time()-LTE_start)>LTE_timeout:
-			log_start("LTE NEVER CONNECTED. ATTEMPT TIMED OUT")
-			#print("LTE NEVER CONNECTED. ATTEMPT TIMED OUT")
-			LTE_connected = True
-			break
 		if output.find(not_connected_msg) != -1 :
 			log_start("Modem Disconnected")
 			break
@@ -130,7 +129,7 @@ while (not(LTE_connected)):
 			break
 		elif output.find(success_msg) != -1:
 			log_start("CONNECTION SUCCEEDED")
-			print("CONNECTION SUCCEEDED")
+			#print("CONNECTION SUCCEEDED")
 			LTE_led.on()
 			LTE_connected = True
 			break
@@ -142,6 +141,8 @@ while (not(LTE_connected)):
 
 #Once LTE is connected, 
 os.system("sudo ifconfig wlan0 down") #disable wifi
+if (not(LTE_connected)):
+	LTE_led.off()
 
 #============== MACROS ===============================
 #Constant Macros
@@ -188,6 +189,8 @@ class client_stream:
 		return self.alive
 	
 	def print_statistics(self):
+		if (not(self.print_output)):
+			return
 		mode_name = ['STREAM_READ', 'STREAM_WRITE', 'STREAM_READ|STREAM_WRITE']
 		print("Stream Name: %s"%(self.name))
 		print("Stream Mode: %s"%(mode_name[self.mode-1]))
@@ -527,7 +530,7 @@ class teensy_handle:
 
 	def read_in_json(self):
 		if (not(self.connected)):
-			return
+			return None
 		JSON_packet = b''
 		try:
 			JSON_packet = self.ser.readline()
@@ -554,7 +557,7 @@ class teensy_handle:
 				self.alive = True
 				return JSON_obj
 			else:
-				return False
+				return None
 
 #TODO Create rocket class to record information and inform system operation
 #keep track of: 
@@ -725,35 +728,35 @@ populate_status_list(status_list, None, telem_stream.alive, video_stream.alive)
 RECORDING_led.blink()
 
 #Wait for startup signal from server
-#if (telem_stream.alive):
-#	telem_stream.wait_for_start(180) #value here is the timeout
+if (telem_stream.alive):
+	telem_stream.wait_for_start(180) #value here is the timeout
 
-time.sleep(3)
-print("Waited 3 seconds")
-#print("STARTING STREAM")	
+
+#log_start("Waited 3 seconds")
+log_start("STARTING STREAM")	
 RECORDING_led.on()
-print("turned led on")
+#log_start("turned led on")
 
 #=================================== Offical Beginning of Stream -> Do all setup before this =============
 #Begin Pi Cam recording
 if camera_alive:
 	camera.start_recording(video_stream.write_buffer, format='h264', bitrate=bitrate_max)
-print("started camera")
+	log_start("Starting Camera Stream")
 #Start timer threads
 #threading.Timer(record_time, interrupt_func).start()
 threading.Timer(record_chunk, store_interrupt_func).start()
-print("started timer")
+
 #Start dump of data from Teensy:
 teensy.start_stream()
-print("Started stream from teensy")
+
 program_start = time.time()
 program_timeout = 0.5*60
-print("Going into main loop")
+
 err_cnt = 0
 #Main Program Loop
 while not(interrupt_bool): #TODO while (telem_stream or video_stream or {rocket has been up and back down to the ground for a significant amount of time} maybe use a class to carry this out	
 	err_cnt += 1
-	print("Looping %d"%(err_cnt))
+	#log_start("Looping %d"%(err_cnt))
 	if (time.time()-program_start) > program_timeout:
 		interrupt_bool = True
 	if (telem_stream.alive or video_stream.alive):
@@ -774,7 +777,7 @@ while not(interrupt_bool): #TODO while (telem_stream or video_stream or {rocket 
 	#pull in new packet from teensy (TIMEOUT IS EVERY 0.1 SECONDS SO THIS WILL BLOCK FOR AT LEAST 0.1s)
 	new_JSON = teensy.read_in_json()
 	packet_Bytes = False
-	if (not(new_JSON)):
+	if (new_JSON is None):
 		populate_status_list(status_list, new_JSON, telem_stream.alive, video_stream.alive)
 		packet_Bytes = form_bin_packet(current_state,0, status_list)
 	else:
@@ -849,9 +852,7 @@ absolute_tm = time.localtime()
 time_str = "\nScript Ended at " + str(absolute_tm[3]) + ":" + str(absolute_tm[4]) + ":" + str(absolute_tm[5])
 time_str += " on " + str(absolute_tm[1]) + "/" + str(absolute_tm[2]) + "/" + str(absolute_tm[0])
 
-log_handle.write(time_str)
-
-log_handle.close()
+log_start(time_str)
 
 os.system("sudo hologram network disconnect -v")#make sure PPP connection does not exist
 LTE_led.off()
