@@ -58,27 +58,23 @@ class server_stream:
 		self.buffer_thresh = buffer_thresh
 		self.server_kill_requestor = None
 		self.kill_request_time = None
-		self.downstream_file = False
-		self.upstream_file = False
 		self.print_output = True #Controls Formatted output to the screen
 		self.log_output = True #controls formatted output to overall system log file
 		
 		if (mode & SRC2SINK == SRC2SINK):
-			self.src2sink_buffer = BytesIO()
+			self.src2sink_buffer = []
 			if self.src2sink_file is not None:
 				#Create new file if it does not exist, or overwrite old file if does
 				self.src2sink_file_handle = open(self.src2sink_file, 'wb')
 				self.src2sink_file_handle.write(b'Starting New Data log at '+get_time().encode('utf-8')+b' on '+date_str.encode('utf-8'))
 				self.src2sink_file_handle.close() #close becuase future writes will be in append mode
-				self.downstream_file = True
 
 		if (mode & SINK2SRC == SINK2SRC):
-			self.sink2src_buffer = BytesIO()
+			self.sink2src_buffer = []
 			if self.sink2src_file is not None:
 				self.sink2src_file_handle = open(self.sink2src_file, 'wb')
 				self.sink2src_file_handle.write(b'Starting New Data log at '+get_time().encode('utf-8')+b' on '+date_str.encode('utf-8'))
 				self.sink2src_file_handle.close()
-				self.upstream_file = True
 		
 		self.server_socket.bind((self.server_IP, self.server_port))
 		self.server_socket.listen()
@@ -182,61 +178,96 @@ class server_stream:
 		client_sock.sendall(b'Please register as "sink" or "src"')
 		self.print_state()
 
+	def pull_sample(self, mode):
+		if (mode & SRC2SINK == SRC2SINK):
+			if (not(self.mode & SRC2SINK)):
+				self.stream_print("SRC2SINK ACCESS DENIED")
+				return None
+			if (len(self.src2sink_buffer) == 0):
+				return None
+			self.stream_print("Popping Sample off of SRC2SINK Buffer")
+			return self.src2sink_buffer.pop(0)
+
+		if (mode & SINK2SRC == SINK2SRC):
+			if (not(self.mode & SINK2SRC)):
+				self.stream_print("SINK2SRC ACCESS DENIED")
+				return
+			if (len(self.sink2src_buffer) == 0):
+				return None
+			self.stream_print("Popping Sample off of SINK2SRC Buffer")
+			return self.sink2src_buffer.pop(0)
+	
+	def write_to_file(self, packet, mode):
+		if (mode & SRC2SINK == SRC2SINK):
+			if (not(self.mode & SRC2SINK)):
+				self.stream_print("SRC2SINK ACCESS DENIED")
+				return
+			self.stream_print("Storing packet to SRC2SINK file")
+			with open(self.src2sink_file, 'ab') as file_handle:
+				file_handle.write(packet)
+
+		if (mode & SINK2SRC == SINK2SRC):
+			if (not(self.mode & SINK2SRC)):
+				self.stream_print("SINK2SRC ACCESS DENIED")
+				return
+			self.stream_print("Storing packet to SINK2SRC file")
+			with open(self.sink2src_file, 'ab') as file_handle:
+				file_handle.write(packet)
 
 	def store_buffer(self, mode):
 		if (mode & SRC2SINK == SRC2SINK):
 			if (not(self.mode & SRC2SINK)):
 				self.stream_print("SRC2SINK ACCESS DENIED")
 				return
-			if(not(self.downstream_file)):
-				return
-			self.stream_print("Storing SRC2SINK Buffer: %d Bytes"%(self.get_buffer_size(SRC2SINK)))
+			self.stream_print("Storing SRC2SINK Buffer")
 			with open(self.src2sink_file, 'ab') as file_handle:
-				file_handle.write(self.src2sink_buffer.getvalue())
+				while len(self.src2sink_buffer) > 0:
+					packet = self.src2sink_buffer.pop(0)
+					file_handle.write(packet)
 
 		if (mode & SINK2SRC == SINK2SRC):
 			if (not(self.mode & SINK2SRC)):
 				self.stream_print("SINK2SRC ACCESS DENIED")
 				return
-			if(not(self.upstream_file)):
-				return
-			self.stream_print("Storing SINK2SRC Buffer: %d Bytes"%(self.get_buffer_size(SINK2SRC)))
+			self.stream_print("Storing SINK2SRC Buffer")
 			with open(self.sink2src_file, 'ab') as file_handle:
-				file_handle.write(self.sink2src_buffer.getvalue())
+				while len(self.sink2src_buffer) > 0:
+					packet = self.sink2src_buffer.pop(0)
+					file_handle.write(packet)
 		
 	def get_buffer_size(self, mode):
 		if (mode & SRC2SINK == SRC2SINK):
 			if (not(self.mode & SRC2SINK)):
 				self.stream_print("NO DOWNSTREAM BUFFER")
 				return 0
-			return self.src2sink_buffer.getbuffer().nbytes
+			return len(self.src2sink_buffer)
 
 		if (mode & SINK2SRC == SINK2SRC):
 			if (not(self.mode & SINK2SRC)):
 				self.stream_print("NO UPSTREAM BUFFER")
 				return 0
-			return self.sink2src_buffer.getbuffer().nbytes
+			return len(self.sink2src_buffer)
 
 	def clear_buffer(self, mode):
 		if (mode & SRC2SINK == SRC2SINK):
 			if (not(self.mode & SRC2SINK)):
 				self.stream_print("NO SRC2SINK BUFFER")
 				return
-			if (self.get_buffer_size(SRC2SINK) == 0):
+			if (len(self.src2sink_buffer) == 0):
 				return
 			self.stream_print("Clearing SRC2SINK Buffer")
-			self.src2sink_buffer.truncate(0)
-			self.src2sink_buffer.seek(0)
+			while len(self.src2sink_buffer) > 0:
+				self.src2sink_buffer.pop(0)
 
 		if (mode & SINK2SRC == SINK2SRC):
 			if (not(self.mode & SINK2SRC)):
 				self.stream_print("NO SINK2SRC BUFFER")
 				return
-			if (self.get_buffer_size(SINK2SRC) == 0):
+			if (len(self.sink2src_buffer) == 0):
 				return
 			self.stream_print("Clearing SINK2SRC Buffer")
-			self.sink2src_buffer.truncate(0)
-			self.sink2src_buffer.seek(0)
+			while len(self.sink2src_buffer) > 0:
+				self.sink2src_buffer.pop(0)
 	
 	def add_to_buffer(self, msg, mode):
 		if (mode & SRC2SINK == SRC2SINK):
@@ -244,39 +275,17 @@ class server_stream:
 				self.stream_print("NO SRC2SINK BUFFER")
 				return
 			self.stream_print("Adding to SRC2SINK Buffer")
-			THREAD_LOCK.acquire()
-			self.src2sink_buffer.write(msg)
-			THREAD_LOCK.release()
+			self.src2sink_buffer.append(msg)
 
 		if (mode & SINK2SRC == SINK2SRC):
 			if (not(self.mode & SINK2SRC)):
 				self.stream_print("NO SINK2SRC BUFFER")
 				return
 			self.stream_print("Adding to SINK2SRC Buffer")
-			THREAD_LOCK.acquire()
-			self.sink2src_buffer.write(msg)
-			THREAD_LOCK.release()
+			self.sink2src_buffer.append(msg)
 	
 	def close(self):
 		self.stream_print("RUNNING FULL CLOSE")
-		if (not(self.mode & SRC2SINK)):
-			pass
-		else:
-			THREAD_LOCK.acquire()
-			self.store_buffer(SRC2SINK)
-			self.clear_buffer(SRC2SINK)
-			THREAD_LOCK.release()
-			self.close_file(SRC2SINK)
-
-		if (not(self.mode & SINK2SRC)):
-			pass
-		else:
-			THREAD_LOCK.acquire()
-			self.store_buffer(SINK2SRC)
-			self.clear_buffer(SINK2SRC)
-			THREAD_LOCK.release()
-			self.close_file(SINK2SRC)
-		
 		self.stream_print("Closing Server Socket")
 		self.server_socket.close()
 		self.alive = False
@@ -301,25 +310,6 @@ class server_stream:
 		else:
 			self.stream_print("ERROR SOCKET TO REMOVE NOT FOUND!!! Nothing to do")
 			return
-
-	def close_file(self, mode):
-		if (mode & SRC2SINK == SRC2SINK):
-			if (not(self.mode & SRC2SINK)):
-				self.stream_print("DOWNSTREAM ACCESS DENIED")
-				return
-			if(not(self.downstream_file)):
-				return
-			self.stream_print("Closing DOWNSTREAM File")
-			self.downstream_file = False
-
-		if (mode & SINK2SRC == SINK2SRC):
-			if (not(self.mode & SINK2SRC)):
-				self.stream_print("UPSTREAM ACCESS DENIED")
-				return
-			if(not(self.upstream_file)):
-				return
-			self.stream_print("Closing UPSTREAM File")
-			self.upstream_file = False
 	
 	def send_packet(self, msg, direction, selector_obj):
 		if (direction & SRC2SINK == SRC2SINK):
@@ -358,7 +348,7 @@ class server_stream:
 			try: 
 				socket.sendall(msg)
 			except:
-				self.stream_print("ERROR NOTIFYING" + self.print_socket() + " -> BROKEN PIPE ON THEIR END")
+				self.stream_print("ERROR NOTIFYING" + self.print_socket(socket) + " -> BROKEN PIPE ON THEIR END")
 
 			self.close_socket(socket, selector_obj)
 		self.stream_print("\tNotifiying %d SINK       sockets and removing"%(len(self.sink_sockets)))
@@ -368,7 +358,7 @@ class server_stream:
 			try: 
 				socket.sendall(msg)
 			except:
-				self.stream_print("ERROR NOTIFYING" + self.print_socket() + " -> BROKEN PIPE ON THEIR END")
+				self.stream_print("ERROR NOTIFYING" + self.print_socket(socket) + " -> BROKEN PIPE ON THEIR END")
 
 			self.close_socket(socket, selector_obj)
 		self.stream_print("\tNotifiying %d SOURCE     sockets and removing"%(len(self.src_sockets)))
@@ -377,25 +367,9 @@ class server_stream:
 			try: 
 				socket.sendall(msg)
 			except:
-				self.stream_print("ERROR NOTIFYING" + self.print_socket() + " -> BROKEN PIPE ON THEIR END")
+				self.stream_print("ERROR NOTIFYING" + self.print_socket(socket) + " -> BROKEN PIPE ON THEIR END")
 
 			self.close_socket(socket, selector_obj)
-
-		if (not(self.mode & SRC2SINK)):
-			pass
-		else:
-			THREAD_LOCK.acquire()
-			self.store_buffer(SRC2SINK)
-			self.clear_buffer(SRC2SINK)
-			THREAD_LOCK.release()
-
-		if (not(self.mode & SINK2SRC)):
-			pass
-		else:
-			THREAD_LOCK.acquire()
-			self.store_buffer(SINK2SRC)
-			self.clear_buffer(SINK2SRC)
-			THREAD_LOCK.release()
 		
 		self.print_state()
 	
@@ -451,31 +425,31 @@ class server_stream:
 			data_packet = socket_obj.recv(4096)
 		except:
 			self.stream_print("ERROR READING FROM" + self.print_socket(socket_obj))
-			return
+			return None
 		if (not(data_packet)):
 			#Data is empty; socket closed by them
 			self.stream_print("Empty data recieved, closing socket to" + self.print_socket(socket_obj))
 			self.close_socket(socket_obj, selector_obj)
 			self.print_state()
-			return
+			return None
 		network_kill = "KILL STREAM"
 		server_kill = "KiLl S3rVer"
 		confirm_kill = "yes"
 		report_users = "users?"	
 		if data_packet.find(network_kill.encode('utf-8')) != -1:
 				self.kill_network(selector_obj)
-				return
+				return None
 		
 		if data_packet.find(server_kill.encode('utf-8')) != -1:
 				self.intiate_kill(socket_obj, selector_obj)
-				return
+				return None
 
 		if data_packet.find(confirm_kill.encode('utf-8')) != -1:
 				self.kill_server(socket_obj, selector_obj)
 
 		if data_packet.find(report_users.encode('utf-8')) != -1:
 				self.query_users(socket_obj, selector_obj)
-				return
+				return None
 		
 		#Data is not empty or kill switch. Check to see where data came from and where it should go
 		if socket_obj in self.undeclared_sockets:
@@ -501,19 +475,17 @@ class server_stream:
 					#Broken Pipe error; Socket no longer connected
 					self.close_socket(socket, selector_obj)
 					
-			return
+			return None
 			
 		elif socket_obj in self.sink_sockets:
 			direction = SINK2SRC
-			self.add_to_buffer(data_packet, direction)
-			return
+			return (data_packet, direction)
 
 		elif socket_obj in self.src_sockets:
 			direction = SRC2SINK
-			self.add_to_buffer(data_packet, direction)
-			return
+			return (data_packet, direction)
 		else:
-			pass
+			return None
 		
 		
 
@@ -533,10 +505,23 @@ def listen(telem_stream, video_stream, selector_obj):
 			if key.data is not(None) and mask == selectors.EVENT_READ|selectors.EVENT_WRITE:
 				socket_obj = key.fileobj
 				if (key.data == video_stream.server_socket and video_stream):
-					video_stream.recv_new_packet(socket_obj, selector_obj)
+
+					new_packet = video_stream.recv_new_packet(socket_obj, selector_obj)
+
+					if new_packet is not None:
+						THREAD_LOCK.acquire()
+						video_stream.add_to_buffer(new_packet[0], new_packet[1])
+						THREAD_LOCK.release()
 
 				if (key.data == telem_stream.server_socket and telem_stream):
-					telem_stream.recv_new_packet(socket_obj, selector_obj)
+
+					new_packet = telem_stream.recv_new_packet(socket_obj, selector_obj)
+
+					if new_packet is not None:
+						THREAD_LOCK.acquire()
+						telem_stream.add_to_buffer(new_packet[0], new_packet[1])
+						THREAD_LOCK.release()
+
 
 	return
 
@@ -545,55 +530,49 @@ def send_data(telem_stream, video_stream, selector_obj):
 	while video_stream or telem_stream:
 		direction = SRC2SINK
 		if (video_stream.mode & direction != 0):
-			if video_stream.get_buffer_size(direction) > 0:
 
-				THREAD_LOCK.acquire()
-				msg = video_stream.src2sink_buffer.getvalue()
-				video_stream.clear_buffer(direction)
-				THREAD_LOCK.release()
-
+			THREAD_LOCK.acquire()
+			msg = video_stream.pull_sample(direction)
+			THREAD_LOCK.release()
+			
+			if msg is not None:
 				video_stream.send_packet(msg, direction, selector_obj)
 				
-				with open(video_stream.src2sink_file, 'ab') as file_handle:
-					file_handle.write(msg)				
+				video_stream.write_to_file(msg, direction)			
 
 		if (telem_stream.mode & direction != 0):
-			if telem_stream.get_buffer_size(direction) > 0:
-				THREAD_LOCK.acquire()
-				msg = telem_stream.src2sink_buffer.getvalue()
-				telem_stream.clear_buffer(direction)
-				THREAD_LOCK.release()
 
+			THREAD_LOCK.acquire()
+			msg = telem_stream.pull_sample(direction)
+			THREAD_LOCK.release()
+			
+			if msg is not None:
 				telem_stream.send_packet(msg, direction, selector_obj)
-
-				with open(telem_stream.src2sink_file, 'ab') as file_handle:
-					file_handle.write(msg)	
+				
+				telem_stream.write_to_file(msg, direction)
 				
 		direction = SINK2SRC
 		if (telem_stream.mode & direction != 0):
-			if telem_stream.get_buffer_size(direction) > 0:
-				THREAD_LOCK.acquire()
-				msg = telem_stream.sink2srcS_buffer.getvalue()
-				telem_stream.clear_buffer(direction)
-				THREAD_LOCK.release()
 
+			THREAD_LOCK.acquire()
+			msg = telem_stream.pull_sample(direction)
+			THREAD_LOCK.release()
+			
+			if msg is not None:
 				telem_stream.send_packet(msg, direction, selector_obj)
 				
-				with open(telem_stream.sink2src_file, 'ab') as file_handle:
-					file_handle.write(msg)	
+				telem_stream.write_to_file(msg, direction)
 
 		if (video_stream.mode & direction != 0):
-			if video_stream.get_buffer_size(direction) > 0:
 
-				THREAD_LOCK.acquire()
-				msg = video_stream.sink2src_buffer.getvalue()
-				video_stream.clear_buffer(direction)
-				THREAD_LOCK.release()
-
+			THREAD_LOCK.acquire()
+			msg = video_stream.pull_sample(direction)
+			THREAD_LOCK.release()
+			
+			if msg is not None:
 				video_stream.send_packet(msg, direction, selector_obj)
 				
-				with open(video_stream.sink2src_file, 'ab') as file_handle:
-					file_handle.write(msg)	
+				video_stream.write_to_file(msg, direction)	
 		
 	
 
