@@ -316,7 +316,7 @@ class server_stream:
 			try: 
 				socket.sendall(msg)
 			except:
-				self.stream_print("ERROR NOTIFYING" + self.print_socket() + " -> BROKEN PIPE ON THEIR END")
+				self.stream_print("ERROR NOTIFYING" + self.print_socket(socket) + " -> BROKEN PIPE ON THEIR END")
 
 			self.close_socket(socket, selector_obj)
 		self.stream_print("\tNotifiying %d SINK       sockets and removing"%(len(self.sink_sockets)))
@@ -326,7 +326,7 @@ class server_stream:
 			try: 
 				socket.sendall(msg)
 			except:
-				self.stream_print("ERROR NOTIFYING" + self.print_socket() + " -> BROKEN PIPE ON THEIR END")
+				self.stream_print("ERROR NOTIFYING" + self.print_socket(socket) + " -> BROKEN PIPE ON THEIR END")
 
 			self.close_socket(socket, selector_obj)
 		self.stream_print("\tNotifiying %d SOURCE     sockets and removing"%(len(self.src_sockets)))
@@ -335,7 +335,7 @@ class server_stream:
 			try: 
 				socket.sendall(msg)
 			except:
-				self.stream_print("ERROR NOTIFYING" + self.print_socket() + " -> BROKEN PIPE ON THEIR END")
+				self.stream_print("ERROR NOTIFYING" + self.print_socket(socket) + " -> BROKEN PIPE ON THEIR END")
 
 			self.close_socket(socket, selector_obj)
 
