@@ -9,7 +9,7 @@ import subprocess
 import smtplib
 from email.mime.text import MIMEText
 
-home = '/home/pi'
+home = '/home/ronnie' #TODO EDIT THIS BEFORE RUNNING TO REFLECT CURRENT HOME DIR
 store_dir = home + "/rocket_data"
 cmd = "mkdir " + store_dir
 os.system(cmd)
@@ -22,20 +22,51 @@ SRC2SINK = 1
 SINK2SRC = 2
 DUPLEX = SRC2SINK|SINK2SRC
 
+send_email = True
+#=================================  Send email with Global IP Address on start-up ===========================
 # Account Information
-to = 'ronnieankner@gmail.com' # Email to send to
-gmail_user = '' # Email to send from (MUST BE GMAIL)
-gmail_password = '' # 16-digit Google App Password if using 2-Step Verification
+gmail_file = home + "/gmail_info.txt"
+try:
+	gmail_info = open(gmail_file, 'r')
+except:
+	print("No gmail info file found. Disabling Email functionality")
+	send_email = False
+if send_email:
+	to = 'ronnieankner@gmail.com' # Email to send to
+	info = gmail_info.read()
+	print(info)
+	gmail_user = info.split('\n')[0] # Email to send from (MUST BE GMAIL)
+	gmail_password = info.split('\n')[1] # 16-digit Google App Password if using 2-Step Verification
 
-def open_smtpserver():
-	smtpserver = smtplib.SMTP('smtp.gmail.com', 587) # Server to use
+	def open_smtpserver():
+		smtpserver = smtplib.SMTP('smtp.gmail.com', 587) # Server to use
 
-	smtpserver.ehlo()  # Says 'hello' to the server
-	smtpserver.starttls()  # Start TLS encryption
-	smtpserver.ehlo()
-	smtpserver.login(gmail_user, gmail_password)  # Log in to server
+		smtpserver.ehlo()  # Says 'hello' to the server
+		smtpserver.starttls()  # Start TLS encryption
+		smtpserver.ehlo()
+		smtpserver.login(gmail_user, gmail_password)  # Log in to server
 
-	return smtpserver
+		return smtpserver
+
+	ipaddr_a = subprocess.Popen(['curl', 'ifconfig.me'], stdout=subprocess.PIPE).communicate()[0]
+	ipaddr_a = ipaddr_a.decode('utf-8')
+
+	my_ip_a = 'Rocket Server Global IP address is %s' %(ipaddr_a)
+
+	msg = MIMEText(my_ip_a)
+
+	msg['Subject'] = 'Initial Global IP for Rocket Server'
+	msg['From'] = gmail_user
+	msg['To'] = to
+	# Sends the message
+	smtpServer = open_smtpserver()
+	try:
+		smtpServer.sendmail(gmail_user, [to], msg.as_string())
+	except:
+		print("Information in gmail file invalid!! Disabling Email Functionality")
+		send_email = False
+	smtpServer.quit()
+#===========================================================================================================
 
 class server_stream:
 	def __init__(self, name, server_IP, server_port, selector_obj, src2sink_file, sink2src_file, mode, buffer_thresh):
@@ -501,20 +532,6 @@ class server_stream:
 #==================================================== CODE ==============================================
 
 #def __init__(self, name, server_IP, server_port, selector_obj, src2sink_file, sink2src_file, mode, buffer_thresh):
-ipaddr_a = subprocess.Popen(['curl', 'ifconfig.me'], stdout=subprocess.PIPE).communicate()[0]
-ipaddr_a = ipaddr_a.decode('utf-8')
-
-my_ip_a = 'Rocket Server Global IP address is %s' %(ipaddr_a)
-
-msg = MIMEText(my_ip_a)
-
-msg['Subject'] = 'Initial Global IP for Rocket Server'
-msg['From'] = gmail_user
-msg['To'] = to
-# Sends the message
-smtpServer = open_smtpserver()
-smtpServer.sendmail(gmail_user, [to], msg.as_string())
-smtpServer.quit()
 
 sel = selectors.DefaultSelector()
 
@@ -546,7 +563,7 @@ while video_stream or telem_stream:
 			if (key.data == telem_stream.server_socket and telem_stream):
 				telem_stream.recv_new_packet(socket_obj, sel)
 
-	if (time.time() - last_time) > 600:
+	if (time.time() - last_time) > 600 and send_email:
 		new_ip = subprocess.Popen(['curl', 'ifconfig.me'], stdout=subprocess.PIPE).communicate()[0]
 		new_ip = new_ip.decode('utf-8')
 		if (new_ip != ipaddr_a):
