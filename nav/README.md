@@ -34,6 +34,8 @@ NavMain.main should be called with the arguments:
 - `sensor_data`: The set of recent sensor measurements (in the dictionary form described above)
 
 ## Future Work
+(See issues with tag "Nav")[https://github.com/intern-space-program/F2019_Avionics/issues?q=is%3Aopen+is%3Aissue+label%3ANAV].
+
 Due to time/human resource constraints in the F2019 semester, the following stretch goals were not met, but could be implemented by future groups if they reuse the Nav code currently developed.
 
 - Some IMUs measure non-conservative acceleration and conservative acceleration separately. Other (cheaper) IMUs just measure conservative acceleration and subtract a gravity term off of it. The IMU used in the F2019 semester is of the latter type, so there is no accuracy to be gained from trying to use both measurements. As such, the Nav code for F2019 only makes use of the non-conservative acceleration measurement. If a different type of IMU is used in the future, `NavMerge.merge_accel` could be updated to make accuracy gains (there is a small bug to be found in the commented-out section of that function).
