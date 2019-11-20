@@ -34,7 +34,7 @@ NavMain.main should be called with the arguments:
 - `sensor_data`: The set of recent sensor measurements (in the dictionary form described above)
 
 ## Future Work
-(See issues with tag "Nav")[https://github.com/intern-space-program/F2019_Avionics/issues?q=is%3Aopen+is%3Aissue+label%3ANAV].
+[See issues with tag "Nav"](https://github.com/intern-space-program/F2019_Avionics/issues?q=is%3Aopen+is%3Aissue+label%3ANAV).
 
 Due to time/human resource constraints in the F2019 semester, the following stretch goals were not met, but could be implemented by future groups if they reuse the Nav code currently developed.
 
