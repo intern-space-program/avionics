@@ -7,7 +7,7 @@ Functions to convert between several different types of frames.
 '''
 
 from numpy import array, cos, sin, tan, arctan, deg2rad, sqrt
-from nav.utils.constants import *
+from nav.utils.constants import flattening, radius_equatorial
 
 
 def lla_to_ecef(lla_array):
