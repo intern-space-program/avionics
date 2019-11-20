@@ -35,7 +35,6 @@ except:
 if send_email:
 	to = 'ronnieankner@gmail.com' # Email to send to
 	info = gmail_info.read()
-	print(info)
 	gmail_user = info.split('\n')[0] # Email to send from (MUST BE GMAIL)
 	gmail_password = info.split('\n')[1] # 16-digit Google App Password if using 2-Step Verification
 
