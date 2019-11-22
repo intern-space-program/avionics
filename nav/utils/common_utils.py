@@ -29,6 +29,9 @@ def weighted_avg(values, weights):
 def unit_test(module_name, tests):
     '''
     Run a set of test functions and print out the results.
+    See test directory for examples of how to structure these tests
+    and how to set up calling this function.
+    
     :param module_name: `str` the name of the module being tested
     :param tests: `list` of functions to test as objects
     '''
