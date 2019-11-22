@@ -1,4 +1,11 @@
 # Avionics F2019
+## Full System Architecture
+
+![full system](system_diagram.png)
+
+## Payload Architecture
+
+![payload](payload_diagram.jpg)
 
 ## Component Descriptions
 
