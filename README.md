@@ -8,7 +8,7 @@
 
 ![payload](payload_diagram.jpg)
 
-### Payload Architecture
+### Server Architecture
 
 ![payload](server_diagram.jpg)
 
