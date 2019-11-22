@@ -1,18 +1,19 @@
 # Navigation
 
 ## Description
-Navigation ("Nav") takes in sensor measurements and the last known state of the rocket and estimates the vehicle's current position, velocity, and attitude.
+Navigation ("Nav") takes in sensor measurements and the last known state of the rocket and estimates the vehicle's current position, velocity, and attitude. **Units are SI.**
 
 ## Use Instructions
 In the F2019 semester, the vehicle has the following set of sensors on board, with the specified data used:
 - GPS
-    - latitude, longitude, altitude (LLA) position
+    - latitude, longitude, altitude (LLA) position (degrees, degrees, meters)
 - IMU
-    - x, y, z conservative acceleration (includes gravity)
-    - x, y, z non-conservative acceleration (gravity subtracted)
-    - x, y, z angular velocity
+    - x, y, z conservative acceleration (includes gravity) (all meters per second squared)
+    - x, y, z non-conservative acceleration (gravity subtracted) (all meters per second squared)
+    - x, y, z angular velocity (all radians per second)
+    - w, x, y, z absolute attitude quaternion (unitless)
 - Temperature/Pressure/Altitude
-    - z position
+    - z position (meters)
     
 This should be compiled into a python dictionary with the following keys and values before being input to Nav:
 - `time`: `float` The time at which the sensor measurements were taken
@@ -24,10 +25,10 @@ This should be compiled into a python dictionary with the following keys and val
 - `q_inert_to_body`: `numpy.array([1x4])` The IMU's orientation quaternion, scalar-first
     
 Nav returns a python dictionary with the following keys and values:
-- `time`: `float` The time at which the state's values were calculated
-- `position`: `numpy.array([1x3])` The x, y, z position (in ECEF frame)
-- `velocity`: `numpy.array([1x3])` The x, y, z velocity (in ECEF frame)
-- `attitude`: `numpy.array([1x4])` A scalar-first right-transform quaternion representing the coordinate transformation from the inertial frame (launchpad frame) to the current frame of the vehicle, effectively representing attitude
+- `time`: `float` The time at which the state's values were calculated (s)
+- `position`: `numpy.array([1x3])` The x, y, z position (in ECEF frame) (m, m, m)
+- `velocity`: `numpy.array([1x3])` The x, y, z velocity (in ECEF frame) (m/s, m/s, m/s)
+- `attitude`: `numpy.array([1x4])` A scalar-first right-transform quaternion representing the coordinate transformation from the inertial frame (launchpad frame) to the current frame of the vehicle, effectively representing attitude (unitless)
 
 NavMain.main should be called with the arguments:
 - `prev_state`: The last known state of the vehicle (in the form returned by NavMain.main, see above)
