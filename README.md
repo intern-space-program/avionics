@@ -8,8 +8,7 @@
 ![payload](payload_diagram.jpg)
 
 ## Component Descriptions
-- **Teensy**:\n
-\tThe Teensy folder contains the Arduino file that allows the co-processor to go through the initiation and calibration procedure and to  \tsample data from the sensor suite, serializing this data via a JSON packet to be sent to the Pi for distribution. (Ronnie is a wanker)
+- **Teensy**:The Teensy folder contains the Arduino file that allows the co-processor to go through the initiation and calibration procedure and to  sample data from the sensor suite, serializing this data via a JSON packet to be sent to the Pi for distribution. ##**(Ronnie is a wanker)
 - **Raspi**: WRITE DESCRIPTION
 - **Nav**: The navigation capability keeps us updated on where the vehicle is, its velocity, and its attitude. It incorporates data from all the sensors on board to come up with an estimated state, then does some light filtering to smooth out the data before it gets transmitted to the ground.
 - **Ground_station**: WRITE DESCRIPTION
