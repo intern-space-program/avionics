@@ -2,7 +2,7 @@
 ## System Diagrams
 ### Full System Architecture
 
-![full system](system_diagram.png | width=100)
+![full system](system_diagram.png =100x)
 
 ### Payload Architecture
 
