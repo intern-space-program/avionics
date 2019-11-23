@@ -22,14 +22,15 @@ This project has pushed the bounds in both live streaming video and telemetry da
 ![payload](server_diagram.jpg)
 
 ## Component Descriptions
-- **Teensy**:The Teensy folder contains the Arduino file that allows the co-processor to go through the initiation and calibration procedure and to  sample data from the sensor suite, serializing this data via a JSON packet to be sent to the Pi for distribution. ## **(Tyler* is a wanker)**
-- **Raspi**: WRITE DESCRIPTION
+- **Teensy**:The Teensy folder contains the Arduino file that allows the co-processor to go through the initiation and calibration procedure and to  sample data from the sensor suite, serializing this data via a JSON packet to be sent to the Pi for distribution.
+- **Raspi**: The raspi folder is deidcated to developing the tools necessary to operate the on-board raspberry pi zero, which is responsible for reading/compressing video data, reading in raw telemetry from the teensy, storing video and telemetry data and sending video and telemetry data over the LTE network to the ground server. 
 - **Nav**: The navigation capability keeps us updated on where the vehicle is, its velocity, and its attitude. It incorporates data from all the sensors on board to come up with an estimated state, then does some light filtering to smooth out the data before it gets transmitted to the ground.
-- **Ground_station**: WRITE DESCRIPTION
-- **Simulation**: WRITE DESCRIPTION
-- **Packetizer**: WRITE DESCRIPTION
+- **Ground_station**: The ground_station folder contains scripts to operate the ground server and client, and also scripts to create and display the telemetry display GUI
+- **Simulation**: the simulation folder contains scripts to generate random, but realistic trajectories and generate varying degress of sensor data from the trajectories to test and flesh out the navigation algorithms. 
+- **Packetizer**: the packetizer folder contains a C-style implementation of payloading and de-payloading the raw telemetry data in a highly efficient structure and byte format. 
 
 ## Payload Setup and Dependencies
+### Install Hologram Nova API
 ### Set Up Conda Environment
 1. Install anaconda: https://www.anaconda.com/distribution/
     - Be sure to download the Python 3 version
@@ -37,3 +38,6 @@ This project has pushed the bounds in both live streaming video and telemetry da
 3. Activate the conda environment: `conda activate avionics`
 
 ## Ground Station Setup and Dependencies
+### Video Streaming and Display
+### GUI Display
+### Screen Streaming to the World
