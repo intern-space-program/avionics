@@ -3,7 +3,7 @@
 THIS IS STILL IN DEVELOPMENT (WORDING AND CONTENT WILL BE CHANGED)
 The intention of this project was to create hardware and software to enable *real-time* streaming of telemetry and video data from within a medium sized rocket. The system was built and developed from the ground up. 
 There were two main goals for the system:
-1. Live Stream Video and Inertial Data
+1. Live Stream Video and Inertial Data to the World
 2. Employ navigation and sensor fusion techniques to localize the payload (and hence rocket) in real time
 
 This project has pushed the bounds in both live streaming video and telemetry data over LTE Cat M-1 and functionality given the limited amount of space in the nosecone. The hope is that future teams will be able to build off of this platform and further the success of the intern space program as a whole.
