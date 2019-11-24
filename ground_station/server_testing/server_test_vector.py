@@ -125,13 +125,13 @@ while packet_cnt < 100:
 	telem_sock.sendall(telem_packet)
 	telem_time = time.time()-telem_start
 	telem_metrics.update_metrics(len(telem_packet), telem_time)
-	#time.sleep(0.1)
+	time.sleep(0.05)
 
 	video_start = time.time()
 	video_sock.sendall(video_packet)
 	video_time = time.time()-video_start
 	video_metrics.update_metrics(len(video_packet), video_time)
-	#time.sleep(0.1)
+	time.sleep(0.05)
 
 program_time = time.time() - program_start
 time.sleep(1.0)
