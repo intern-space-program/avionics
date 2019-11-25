@@ -1,6 +1,13 @@
 # Avionics F2019
+## Purpose of This Repo
+Intern Space Program began in 2018, but the Avionics group has struggled consistently due to:
+* Poor hardware/software documentation
+* Primary goals left incomplete and/or problems unsolved
+* Inconsistent handover of work to future tours
+
+This repo is an effort to resolve those issues. Why rebuild from scratch when previous tours have done some of the dirty work? Make use of what's been done and develop new features that you'd like to see. Please see the [CONTRIBUTING guide](https://github.com/intern-space-program/avionics/blob/master/CONTRIBUTING.md) for more information.
+
 ## Project Overview and Goals
-THIS IS STILL IN DEVELOPMENT (WORDING AND CONTENT WILL BE CHANGED)
 The intention of this project was to create hardware and software to enable *real-time* streaming of telemetry and video data from within a medium sized rocket. The system was built and developed from the ground up. 
 There were two main goals for the system:
 1. Live Stream Video and Inertial Data to the World
