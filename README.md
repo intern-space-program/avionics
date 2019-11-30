@@ -48,6 +48,8 @@ This project has pushed the bounds in both live streaming video and telemetry da
 2. From the command line, run: `conda create env -f condaenv.yml`
 3. Activate the conda environment: `conda activate avionics`
 
+If you need additional packages installed, or packages that can't be installed with Conda, let the group lead know and document the requirement in your capability's README.
+
 ## Ground Station Setup and Dependencies
 ### Video Streaming and Display
 ### GUI Display
