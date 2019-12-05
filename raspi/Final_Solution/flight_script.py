@@ -75,7 +75,12 @@ while cnt < 10:
 
 
 home = '/home/pi'
+
 store_dir = home + "/rocket_data"
+cmd = "mkdir " + store_dir
+os.system(cmd)
+
+store_dir = home + "/rocket_data/"+ str(absolute_tm[1]) + "-" + str(absolute_tm[2]) + "-" + str(absolute_tm[0]) + "_" + str(absolute_tm[3]) + "-" + str(absolute_tm[4]) + "-" + str(absolute_tm[5])
 cmd = "mkdir " + store_dir
 os.system(cmd)
 
@@ -257,6 +262,8 @@ class client_stream:
 				return
 			self.stream_print("Storing READ Buffer: %d Bytes"%(self.get_buffer_size(STREAM_READ)))
 			self.read_file_handle.write(self.read_buffer.getvalue())
+			self.read_file_handle.close()
+			self.read_file_handle = open(self.read_store_file, 'ab')
 
 		if (mode & STREAM_WRITE == STREAM_WRITE):
 			if (not(self.mode & STREAM_WRITE)):
@@ -266,6 +273,8 @@ class client_stream:
 				return
 			self.stream_print("Storing WRITE Buffer: %d Bytes"%(self.get_buffer_size(STREAM_WRITE)))
 			self.write_file_handle.write(self.write_buffer.getvalue())
+			self.write_file_handle.close()
+			self.write_file_handle = open(self.write_store_file, 'ab')
 		
 	def get_buffer_size(self, mode):
 		if (mode & STREAM_READ == STREAM_READ):
