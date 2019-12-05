@@ -729,7 +729,7 @@ RECORDING_led.blink()
 
 #Wait for startup signal from server
 if (telem_stream.alive):
-	telem_stream.wait_for_start(180) #value here is the timeout
+	telem_stream.wait_for_start(8*60) #value here is the timeout
 
 
 #log_start("Waited 3 seconds")
@@ -750,7 +750,7 @@ threading.Timer(record_chunk, store_interrupt_func).start()
 teensy.start_stream()
 
 program_start = time.time()
-program_timeout = 0.5*60
+program_timeout = 15*60
 
 err_cnt = 0
 #Main Program Loop
