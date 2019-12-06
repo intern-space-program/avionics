@@ -74,7 +74,9 @@ while cnt < 10:
 	SERVER_led.off()
 
 
+
 home = '/home/pi'
+absolute_tm = time.localtime()
 
 store_dir = home + "/rocket_data"
 cmd = "mkdir " + store_dir
@@ -96,7 +98,7 @@ def log_start(msg):
 	with open(log_file, 'a') as log_writer:
 		log_writer.write(("\n" + get_time() + msg))
 
-absolute_tm = time.localtime()
+
 time_str = "Script Started at " + str(absolute_tm[3]) + ":" + str(absolute_tm[4]) + ":" + str(absolute_tm[5])
 time_str += " on " + str(absolute_tm[1]) + "/" + str(absolute_tm[2]) + "/" + str(absolute_tm[0])
 
