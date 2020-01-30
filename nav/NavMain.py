@@ -17,10 +17,8 @@ def main(prev_state, sensor_data):
     reception of raw sensor data to outputted
     navigation telemetry.
 
-    :param prev_state: The last known state of the vehicle
-    :type prev_state: `dict`
-    :param sensor_data: The raw sensor measurements
-    :type sensor_data: `dict
+    :param prev_state: `dict` the last known state of the vehicle
+    :param sensor_data: `dict` the raw sensor measurements
     :return: `dict` of updated navigation state telemetry
     '''
     # convert GPS from LLA to ECEF
