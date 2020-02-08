@@ -14,6 +14,10 @@ def lla_to_ecef(lla_array):
     '''
     Convert from GPS (latitude, longitude, altitude) to
     Earth-centered, Earth-fixed (x, y, z) position.
+
+    Reference:
+    https://www.mathworks.com/help/aeroblks/llatoecefposition.html
+
     :param lla_array: `numpy.array([1x3])` array of (lat, long, alt) as `float`
     :return: `numpy.array([1x3])` ECEF (x, y, z) position
     '''
