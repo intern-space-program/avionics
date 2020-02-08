@@ -14,8 +14,8 @@ M_E = 5.972e24   # (kg) mass of Earth
 G_E = G*M_E      # (m**3/s**2) gravitational parameter of Earth
 ACC_GRAV = 9.81  # (m/s**2) gravitational acceleration near Earth's surface
 
-flattening_reciprocal = 298.257223563  # (--) WGS 84 Earth Reciprocal of Flattening
-flattening = 1 / flattening_reciprocal # (--) WGS 84 Earth Flattening Parameter
+flattening_reciprocal = 298.257223563   # (--) WGS 84 Earth Reciprocal of Flattening
+flattening = 1 / flattening_reciprocal  # (--) WGS 84 Earth Flattening Parameter
 radius_equatorial = 6378137  # (m) equatorial radius
 
 # Conventions
