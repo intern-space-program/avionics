@@ -40,6 +40,14 @@ This project has pushed the bounds in both live streaming video and telemetry da
 - **Simulation**: the simulation folder contains scripts to generate random, but realistic trajectories and generate varying degress of sensor data from the trajectories to test and flesh out the navigation algorithms. 
 - **Packetizer**: the packetizer folder contains a C-style implementation of payloading and de-payloading the raw telemetry data in a highly efficient structure and byte format. 
 
+## Hardware List Fall 2019
+- [Raspberry Pi 3 Model B](https://www.adafruit.com/product/3775?src=raspberrypi)
+- [Raspberry Pi Zero](https://www.adafruit.com/product/3708)
+- [Raspberry Pi Camera](https://www.amazon.com/Raspberry-Pi-Camera-Module-Megapixel/dp/B01ER2SKFS)
+- [Adafruit GPS Sensor](https://www.adafruit.com/product/746)
+- [Adafruit Temp/Press Altitude Sensor](https://www.adafruit.com/product/2651)
+- [Adafruit IMU](https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/overview)
+
 ## Payload Setup and Dependencies
 ### Install Hologram Nova API
 ### Set Up Conda Environment
