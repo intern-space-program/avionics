@@ -279,28 +279,28 @@ void set_sensor_status_flags(JsonArray gps, JsonArray imu, JsonArray tpa)
 void set_up_gps()
 {
   GPS.begin(9600);
-  GPS_CONNECTED = true;
-  if(GPS_CONNECTED){
-    piSerial.println("GPS Detected!");
-    /*  Uncomment this line to turn on RMC (recommended minimum)
-    and GGA (fix data) including altitude */
-    GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  GPS_CONNECTED = true;  // GPS.begin() on previous line did not crash
+  
+  piSerial.println("GPS Detected!");
+  /*  Uncomment this line to turn on RMC (recommended minimum)
+  and GGA (fix data) including altitude */
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
 
-    /*  Uncomment this line to turn on only the 
-    "minimum recommended" data */
-    //GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
+  /*  Uncomment this line to turn on only the 
+  "minimum recommended" data */
+  //GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
 
-    /*  SET UPDATE RATE: 
-    For the parsing code to work nicely and have time to sort 
-    thru the data, and print it out we don't suggest using 
-    anything higher than 1 Hz */
-    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ); // 1 Hz update rate
-    
-    delay(1000);
+  /*  SET UPDATE RATE: 
+  For the parsing code to work nicely and have time to sort 
+  thru the data, and print it out we don't suggest using 
+  anything higher than 1 Hz */
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ); // 1 Hz update rate
 
-    // Initialize the offset to be 0
-    *gps_alti_offset_address = 0.0;
-  }
+  delay(1000);
+
+  // Initialize the offset to be 0
+  *gps_alti_offset_address = 0.0;
+  
 } // set_up_gps
 
 void check_for_bmp_status()
