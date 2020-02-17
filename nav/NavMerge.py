@@ -25,19 +25,12 @@ def merge_accel(prev_position, accel_nc, accel_c):
 
     p_prev_norm = norm(prev_position)
     if p_prev_norm != 0:  # safing against division by zero
-        a_1_calulated = accel_c + G_E*prev_position/(p_prev_norm**3)
-        a_1_avg = 0.5*(a_1_calulated + accel_nc)
+        accel_gravity = array([0.0, 0.0, G_E/(p_prev_norm**2)])
+        accel_nc_calculated = accel_c + accel_gravity
+        return 0.5*(accel_nc + accel_nc_calculated)
     else:
-        # need to give some data back, even if it's all zeros
-        # use the IMU's non-conservative acceleration measurement
-        a_1_avg = accel_nc
-
-    # For some IMUs, the accel_nc and accel_c are measured separately, but for
-    # F2019, the IMU just subtracts gravity from accel_c to get accel_nc.
-    # return a_1_avg  # delete this if we use an IMU that measures accel_nc and accel_c separately
-
-    # Since we just need accel_nc, we just use what the IMU gives us.
-    return accel_nc  # delete this if we use an IMU that measures accel_nc and accel_c separately
+        # need to give some data back
+        return accel_nc
 
 
 def merge_position(prev_position, prev_velocity, dt, accel_merged, gps, altitude):
