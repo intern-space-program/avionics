@@ -17,7 +17,7 @@ In the F2019 semester, the vehicle has the following set of sensors on board, wi
     
 This should be compiled into a python dictionary with the following keys and values before being input to Nav:
 - `time`: `float` The time at which the sensor measurements were taken
-- `altitude`: `float` The GPA sensor's altitude measurement
+- `altitude`: `float` The altitude sensor's measurement
 - `gps`: `numpy.array([1x3])` The GPS sensor's latitude, longitude, altitude position measurement
 - `accel_nc`: `numpy.array([1x3])` The IMU's x, y, z non-conservative acceleration measurement
 - `accel_c`: `numpy.array([1x3])` The IMU's x, y, z conservative acceleration measurement
