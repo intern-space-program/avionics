@@ -25,7 +25,7 @@ def merge_accel(prev_position, accel_nc, accel_c):
 
     p_prev_norm = norm(prev_position)
     if p_prev_norm != 0:  # safing against division by zero
-        accel_gravity = G_E*prev_position/(p_prev_norm**3 )
+        accel_gravity = array([0.0, 0.0, G_E/(p_prev_norm**2)])
         accel_nc_calculated = accel_c + accel_gravity
         return 0.5*(accel_nc + accel_nc_calculated)
     else:
