@@ -75,7 +75,7 @@ def main_test_translational():
 
 def nav_speed_test():
     # SETUP
-    max_time = 0.0001  # seconds
+    max_time = 0.001  # seconds
     desc = 'nav_speed_test - Ensure that NavMain.main runs in less than {} seconds'.format(max_time)
 
     # read raw data from input file
