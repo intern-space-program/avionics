@@ -31,18 +31,15 @@ def merge_accel_test_null():
         else (FAIL, description)
 
 
-# TODO: this test fails since merge_accel descoped to just return accel_nc input
 def merge_accel_test_values():
     # setup
     description = 'merge_accel_test_values - Test merge_accel with non-zero inputs'
-    prev_position = array([1.73205, 1.73205, 1.73205])
-    accel_nc = array([0.0, 0.0, 0.0])
-    accel_c = array([0.0, 0.0, 0.0])
+    prev_position = array([0.0, 0.0, 6371000.0])
+    accel_nc = array([1.0, 1.0, 0.0])
+    accel_c = array([1.0, 1.0, -G_E/6371000**2])
 
     # expected results
-    # TODO convert this from a calculation to actual numbers
-    new_a = 0.5*(-G_E*prev_position/((norm(prev_position))**3))
-    exp = new_a
+    exp = array([1.0, 1.0, 0.0])
 
     # unit test
     ret = merge_accel(prev_position, accel_nc, accel_c)
