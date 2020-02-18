@@ -8,27 +8,22 @@ This also serves as an effective integration test for
 the Nav design for F2019.
 '''
 
-from numpy import array, allclose, arange
+from numpy import array, allclose, arange, zeros
 from numpy.linalg import norm
 from nav.utils.frame_utils import lla_to_ecef, ecef_to_lla
 from nav.utils.common_utils import unit_test
 from nav.utils.constants import PASS, FAIL, G_E
 import nav.NavMain
 import pandas as pd
+import timeit
 
 
-def main_test():
+def main_test_translational():
     # SETUP
-    desc = 'main_test - Test NavMain.main with high-fidelity inputs'
+    desc = 'main_test - Test NavMain.main translational functionality with high-fidelity inputs'
 
     # read raw data from input file
     data = pd.read_csv('sim_data.csv')
-    state_init = {
-        't': data['t'][0],
-        'p_ecef': array([data['p_x'][0], data['p_y'][0], data['p_z'][0]]),
-        'v': array([data['v_x'][0], data['v_y'][0], data['v_z'][0]]),
-        'a': array([data['anc_x'][0], data['anc_y'][0], data['anc_z'][0]]),
-    }
 
     # EXPECTED RESULT
     exp = {
@@ -40,9 +35,9 @@ def main_test():
 
     # UNIT UNDER TEST
     prev_state = {
-        'time': state_init['t'],
-        'position': state_init['p_ecef'],
-        'velocity': state_init['v'],
+        'time': data['t'][0],
+        'position': array([data['p_x'][0], data['p_y'][0], data['p_z'][0]]),
+        'velocity': array([data['v_x'][0], data['v_y'][0], data['v_z'][0]]),
         'attitude': array([1.0, 0.0, 0.0, 0.0])
     }
 
@@ -51,23 +46,17 @@ def main_test():
 
         p_ecef = array([data['p_x'][i], data['p_y'][i], data['p_z'][i]])
         p_lla = ecef_to_lla(p_ecef)
-        altitude = p_lla[2]
-        gps = p_lla
 
         accel_nc = array([data['anc_x'][i], data['anc_y'][i], data['anc_z'][i]])
-        accel_c = accel_nc - G_E*p_ecef/((norm(p_ecef))**3)
-
-        angular_velocity = array([0.0, 0.0, 0.0])
-        q_inert_to_body = array([1.0, 0.0, 0.0, 0.0])
 
         sensor_data = {
             'time': data['t'][i],
-            'altitude': altitude,
-            'gps': gps,
+            'altitude': p_lla[2],
+            'gps': p_lla,
             'accel_nc': accel_nc,
-            'accel_c': accel_c,
-            'angular_velocity': angular_velocity,
-            'q_inert_to_body': q_inert_to_body
+            'accel_c': accel_nc - G_E*p_ecef/((norm(p_ecef))**3),
+            'angular_velocity': array([0.0, 0.0, 0.0]),
+            'q_inert_to_body': array([1.0, 0.0, 0.0, 0.0])
         }
 
         prev_state = nav.NavMain.main(prev_state, sensor_data)
@@ -84,12 +73,57 @@ def main_test():
     return (PASS, desc) if need_to_pass == 0 else (FAIL, desc)
 
 
+def nav_speed_test():
+    # SETUP
+    max_time = 0.0001  # seconds
+    desc = 'nav_speed_test - Ensure that NavMain.main runs in less than {} seconds'.format(max_time)
+
+    # read raw data from input file
+    data = pd.read_csv('sim_data.csv')
+
+    # UNIT UNDER TEST
+    elapsed_times = zeros(len(data['t'])-1)
+
+    prev_state = {
+        'time': data['t'][0],
+        'position': array([data['p_x'][0], data['p_y'][0], data['p_z'][0]]),
+        'velocity': array([data['v_x'][0], data['v_y'][0], data['v_z'][0]]),
+        'attitude': array([1.0, 0.0, 0.0, 0.0])
+    }
+
+    for i in arange(1, len(data['t'])):
+        time = data['t'][i]
+
+        p_ecef = array([data['p_x'][i], data['p_y'][i], data['p_z'][i]])
+        p_lla = ecef_to_lla(p_ecef)
+
+        accel_nc = array([data['anc_x'][i], data['anc_y'][i], data['anc_z'][i]])
+
+        sensor_data = {
+            'time': data['t'][i],
+            'altitude': p_lla[2],
+            'gps': p_lla,
+            'accel_nc': accel_nc,
+            'accel_c': accel_nc - G_E*p_ecef/((norm(p_ecef))**3),
+            'angular_velocity': array([0.0, 0.0, 0.0]),
+            'q_inert_to_body': array([1.0, 0.0, 0.0, 0.0])
+        }
+
+        start_time = timeit.default_timer()
+        prev_state = nav.NavMain.main(prev_state, sensor_data)
+        elapsed = timeit.default_timer() - start_time
+        elapsed_times[i-1] = elapsed
+
+    # RESULTS
+    return (PASS, desc) if (elapsed_times < max_time).sum() == len(elapsed_times) else (FAIL, desc)
+
 # Test Loop
 def main():
     module_name = 'NavMerge.py'
 
     tests = [
-        main_test
+        main_test_translational,
+        nav_speed_test
     ]
 
     unit_test(module_name, tests)
