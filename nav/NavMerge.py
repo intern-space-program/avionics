@@ -110,7 +110,7 @@ def merge_main(prev_state, new_measurements):
     prev_attitude = prev_state['attitude']
 
     # unpack the sensor measurements
-    dt = new_measurements['time']  # `float` (s) since previous state
+    dt = new_measurements['time'] - prev_time  # `float` (s) since previous state
     # airspeed = new_measurements['airspeed']  # `float` (m/s) current airspeed (no airspeed sensor F2019)
     altitude = new_measurements['altitude']  # `float` (m) current altitude
     gps = new_measurements['gps']  # `np.array([1x3])` (m) GPS position vector
