@@ -8,84 +8,78 @@ This also serves as an effective integration test for
 the Nav design for F2019.
 '''
 
-from numpy import array, allclose
+from numpy import array, allclose, arange
 from numpy.linalg import norm
+from nav.utils.frame_utils import lla_to_ecef, ecef_to_lla
 from nav.utils.common_utils import unit_test
 from nav.utils.constants import PASS, FAIL, G_E
 import nav.NavMain
+import pandas as pd
 
 
 def main_test():
     # SETUP
-    desc = 'main_test_null - Test NavMain.main with high-fidelity inputs'
-    # read raw data from input file
-    data = []
-    with open('avp_sim_data.csv', 'r', encoding='utf-8-sig') as f:
-        for line in f:
-            line = line.replace('\n', '').split(',')
-            t = float(line[0])
-            ax, ay, az = float(line[1]), float(line[2]), float(line[3])
-            vx, vy, vz = float(line[4]), float(line[5]), float(line[6])
-            px, py, pz = float(line[7]), float(line[8]), float(line[9])
-            data.append({
-                't': t,
-                'a': array([ax, ay, az]),
-                'v': array([vx, vy, vz]),
-                'p': array([px, py, pz])
-            })
+    desc = 'main_test - Test NavMain.main with high-fidelity inputs'
 
-    # create initial state for propagation
-    init_state = {
-        'time': 0.0,
-        'position': array([0.0, 0.0, 0.0]),
-        'velocity': array([0.0, 0.0, 0.0]),
+    # read raw data from input file
+    data = pd.read_csv('sim_data.csv')
+    state_init = {
+        't': data['t'][0],
+        'p_ecef': array([data['p_x'][0], data['p_y'][0], data['p_z'][0]]),
+        'v': array([data['v_x'][0], data['v_y'][0], data['v_z'][0]]),
+        'a': array([data['anc_x'][0], data['anc_y'][0], data['anc_z'][0]]),
+    }
+
+    # EXPECTED RESULT
+    exp = {
+        'time': 0.2,
+        'position': array([6378137.035530, 0.038250, 0.036250]),
+        'velocity': array([0.358000, 0.350000, 0.350000]),
         'attitude': array([1.0, 0.0, 0.0, 0.0])
     }
 
-    # convert raw input data to format expected by nav
-    sensor_outputs = []
-    for datum in data:
-        time = datum['t']
-        altitude = datum['p'][2]
-        gps = datum['p']
-        accel_nc = datum['a']
+    # UNIT UNDER TEST
+    prev_state = {
+        'time': state_init['t'],
+        'position': state_init['p_ecef'],
+        'velocity': state_init['v'],
+        'attitude': array([1.0, 0.0, 0.0, 0.0])
+    }
 
-        if abs(norm(gps)) >= 0.00000001:
-            accel_c = datum['a'] + G_E*gps/((norm(gps))**3)
-        else:
-            accel_c = array([0.0, 0.0, 0.0])
+    for i in arange(1, len(data['t'])):
+        time = data['t'][i]
 
-        q_inert_to_body = array([1.0, 0.0, 0.0, 0.0])
+        p_ecef = array([data['p_x'][i], data['p_y'][i], data['p_z'][i]])
+        p_lla = ecef_to_lla(p_ecef)
+        altitude = p_lla[2]
+        gps = p_lla
+
+        accel_nc = array([data['anc_x'][i], data['anc_y'][i], data['anc_z'][i]])
+        accel_c = accel_nc - G_E*p_ecef/((norm(p_ecef))**3)
+
         angular_velocity = array([0.0, 0.0, 0.0])
-        sensor_outputs.append({
-            'time': time,
+        q_inert_to_body = array([1.0, 0.0, 0.0, 0.0])
+
+        sensor_data = {
+            'time': data['t'][i],
             'altitude': altitude,
             'gps': gps,
             'accel_nc': accel_nc,
             'accel_c': accel_c,
             'angular_velocity': angular_velocity,
             'q_inert_to_body': q_inert_to_body
-        })
+        }
 
-    # EXPECTED RESULTS
-    exp = {
-        'time': 0.4,
-        'position': array([0.002, 0.002, 0.002]),
-        'velocity': array([0.0, 0.0, 0.0]),
-        'attitude': array([1.0, 0.0, 0.0, 0.0])
-    }
+        prev_state = nav.NavMain.main(prev_state, sensor_data)
 
-    # TEST
-    ret = init_state
-    for sensor_output in sensor_outputs:
-        ret = nav.NavMain.main(ret, sensor_output)
+    ret = prev_state
 
     # RESULTS
     need_to_pass = 4
     need_to_pass -= 1 if ret['time'] == exp['time'] else 0
-    need_to_pass -= 1 if allclose(ret['position'], exp['position'], atol=0.00001) else 0
-    need_to_pass -= 1 if allclose(ret['velocity'], exp['velocity'], atol=0.00001) else 0
-    need_to_pass -= 1 if allclose(ret['attitude'], exp['attitude'], atol=0.00001) else 0
+    need_to_pass -= 1 if allclose(ret['position'], exp['position'], atol=0.001) else 0
+    need_to_pass -= 1 if allclose(ret['velocity'], exp['velocity'], atol=0.001) else 0
+    need_to_pass -= 1 if allclose(ret['attitude'], exp['attitude'], atol=0.001) else 0
 
     return (PASS, desc) if need_to_pass == 0 else (FAIL, desc)
 
