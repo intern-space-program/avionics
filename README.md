@@ -18,15 +18,15 @@ This project has pushed the bounds in both live streaming video and telemetry da
 ## System Diagrams
 ### Full System Architecture
 
-![full system](system_diagram.png)
+![full system](img/system_diagram.png)
 
 ### Payload Architecture
 
-![payload](payload_diagram.jpg)
+![payload](img/payload_diagram.jpg)
 
 ### Server Architecture
 
-![payload](server_diagram.jpg)
+![payload](img/server_diagram.jpg)
 
 ## Component Descriptions
 - **Teensy**:The Teensy folder contains the Arduino file that allows the co-processor to go through the initiation and calibration procedure and to  sample data from the sensor suite, serializing this data via a JSON packet to be sent to the Pi for distribution.
