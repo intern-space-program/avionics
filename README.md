@@ -1,4 +1,4 @@
-# Avionics F2019
+# Avionics
 ## Purpose of This Repo
 Intern Space Program began in 2018, but the Avionics group has struggled consistently due to:
 * Poor hardware/software documentation
@@ -14,6 +14,10 @@ There were two main goals for the system:
 2. Employ navigation and sensor fusion techniques to localize the payload (and hence rocket) in real time
 
 This project has pushed the bounds in both live streaming video and telemetry data over LTE Cat M-1 and functionality given the limited amount of space in the nosecone. The hope is that future teams will be able to build off of this platform and further the success of the intern space program as a whole.
+
+## Setup
+1. Install python.
+2. From your command line, run `pip install -r requirements.txt` from the repo's directory.
 
 ## System Diagrams
 ### Full System Architecture
@@ -50,14 +54,6 @@ This project has pushed the bounds in both live streaming video and telemetry da
 
 ## Payload Setup and Dependencies
 ### Install Hologram Nova API
-### Set Up Conda Environment
-1. Install anaconda: https://www.anaconda.com/distribution/
-    - Be sure to download the Python 3 version
-2. From the command line, run: `conda create env -f condaenv.yml`
-3. Activate the conda environment: `conda activate avionics`
-
-If you need additional packages installed, or packages that can't be installed with Conda, let the group lead know and document the requirement in your capability's README.
-
 ## Ground Station Setup and Dependencies
 ### Video Streaming and Display
 ### GUI Display
