@@ -42,11 +42,47 @@ def lla_to_ecef_test_values():
     return (PASS, description) if allclose(ret, exp, atol=0.001) \
         else (FAIL, description)
 
+
+def ecef_to_lla_test_null():
+    # setup
+    description = 'ecef_to_lla_test_null - Test ecef_to_lla with zeroed-out inputs.'
+    lla_array = array([0.0, 0.0, 0.0])
+
+    # expected results
+    exp = array([0.0, 0.0, 0.0])
+
+    # unit test
+    # we know lla_to_ecef works, so just need to test that this function inverts lla_to_ecef
+    ret = ecef_to_lla(lla_to_ecef(lla_array))
+
+    # results
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
+
+
+def ecef_to_lla_test_values():
+    # setup
+    description = 'ecef_to_lla_test_values - Test ecef_to_lla with flight-like inputs.'
+    lla_array = array([29.5593, 95.0900, 304.8])  # 1000 ft above JSC!
+
+    # expected results
+    exp = lla_array
+
+    # unit test
+    # we know lla_to_ecef works, so just need to test that this function inverts lla_to_ecef
+    ret = ecef_to_lla(lla_to_ecef(lla_array))
+
+    # results
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
+
 def main():
     module_name = 'frame_utils_test.py'
     tests = [
         lla_to_ecef_test_null,
-        lla_to_ecef_test_values
+        lla_to_ecef_test_values,
+        ecef_to_lla_test_null,
+        ecef_to_lla_test_values
     ]
 
     unit_test(module_name, tests)
