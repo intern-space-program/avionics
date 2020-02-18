@@ -6,7 +6,7 @@ Date: 2019-11-16
 Functions to convert between several different types of frames.
 '''
 
-from numpy import array, cos, sin, tan, arctan, deg2rad, sqrt, arctan2, rad2deg, pi
+from numpy import array, cos, sin, tan, arctan, arctan2, deg2rad, rad2deg, sqrt, pi
 from nav.utils.constants import flattening, radius_equatorial
 
 
