@@ -33,6 +33,9 @@ volatile bool BNO_CONNECTED;
 volatile bool BMP_CONNECTED;
 volatile bool GPS_CONNECTED;
 
+// Flag to know when to JSON packets via Serial Port
+bool SEND_DATA = false;
+
 uint32_t timer = millis(); // A timer used to determine when to sample the sensors
 
 //GPS Assignments..........................
@@ -67,7 +70,7 @@ void check_for_bmp_status();
 void set_up_imu();
 void initial_hand_shake_sequence();
 void final_hand_shake_sequence();
-void pull_data_and_serialize();
+void sample_data_and_build_json_packet();
 
 
 //________________________________________________________________________________//
@@ -98,57 +101,17 @@ void setup(void)
     if ((millis() - calibration_timeout) > maximum_calibration_time) 
       break; 
     
-    pull_data();
+    sample_data_and_build_json_packet();
   } // while loop
   
   piSerial.print("Calibration Finished");
   final_hand_shake_sequence();
+  SEND_DATA = true;
 } // void loop
 
-void loop(void) {
-
-  sample_GPS();
-
-  /* if millis() or timer wraps around, we'll just reset it
-     We don't want the timer to be bigger the clock timer on the processor. */
-  if (timer > millis())
-  {
-    timer = millis();
-  }
-
-  /////////////////////////////////////////////////////////////////////////////////// 
-  //  READ SENSORS AND SEND DATA AT 10Hz. (Every 100 milliseconds)
-  ///////////////////////////////////////////////////////////////////////////////////
-  if (millis() - timer > 100) 
-  {
-    //_____________Reset Timer______________//
-    timer = millis(); // reset the timer
- 
-    //___________Create JSON Object__________// 
-    StaticJsonDocument<500> doc; //PACKET SIZE = 550
-
-    //___________Create JSON Arrays__________//
-    JsonArray hdr = doc.createNestedArray("hdr"); //create the Json Object
-    JsonArray tpa = doc.createNestedArray("tpa");
-    JsonArray imu = doc.createNestedArray("imu");
-    JsonArray gps = doc.createNestedArray("gps");
-
-    tpa = fill_in_bmp_array(tpa);
-
-    imu = fill_in_bno_array(imu);
-
-    gps = fill_in_gps_array(gps);
-
-    set_sensor_status_flags(gps, imu, tpa);
-
-    hdr = fill_in_hdr_array(hdr);
-
-    //______________Send Data______________//
-    serializeJson(doc, piSerial);
-    piSerial.println("");
-
-    packetNo++;
-  } // timer
+void loop(void)
+{
+  sample_data_and_build_json_packet();
 } // loop
 
 /*
@@ -391,7 +354,7 @@ void initial_hand_shake_sequence()
   }
 }
 
-void pull_data(){
+void sample_data_and_build_json_packet(){
   
   sample_GPS();
 
@@ -428,6 +391,14 @@ void pull_data(){
     set_sensor_status_flags(gps, imu, tpa);
 
     hdr = fill_in_hdr_array(hdr);
+    
+    // Will only sample once the system is initialized.
+    if (SEND_DATA)
+    {
+      //______________Send Data______________//
+      serializeJson(doc, piSerial);
+      piSerial.println("");
+    }
 
     packetNo++;
   } // timer
