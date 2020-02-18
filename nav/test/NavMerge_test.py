@@ -34,7 +34,7 @@ def merge_accel_test_null():
 def merge_accel_test_values():
     # setup
     description = 'merge_accel_test_values - Test merge_accel with non-zero inputs'
-    prev_position = array([6371000, 0.0, 0.0])
+    prev_position = array([0.0, 0.0, 6371000.0])
     accel_nc = array([1.0, 1.0, 0.0])
     accel_c = array([1.0, 1.0, -G_E/6371000**2])
 
@@ -45,7 +45,6 @@ def merge_accel_test_values():
     ret = merge_accel(prev_position, accel_nc, accel_c)
 
     # results
-    passing = allclose(ret, exp, atol=0.001)
     return (PASS, description) if allclose(ret, exp, atol=0.001) \
         else (FAIL, description)
 
