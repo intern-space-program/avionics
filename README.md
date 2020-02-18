@@ -16,7 +16,7 @@ There were two main goals for the system:
 This project has pushed the bounds in both live streaming video and telemetry data over LTE Cat M-1 and functionality given the limited amount of space in the nosecone. The hope is that future teams will be able to build off of this platform and further the success of the intern space program as a whole.
 
 ## Setup
-1. Install python.
+1. Install `python>=3.7`.
 2. From your command line, run `pip install -r requirements.txt` from the repo's directory.
 
 ## System Diagrams
