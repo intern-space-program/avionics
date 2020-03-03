@@ -20,7 +20,6 @@ Adafruit_BMP280 bmp(BMP_CS);  //object define for hardware SPI
 double base_altitude;         //var to hold starting altitude of sensor
 double current_altitude;      //var to hold the current altitude of sensor
 volatile bool BMP_CONNECTED;  //tells if BMP280 is connected or not
-bool is_1st_loop = true;      //used to assign 'base_altitude' on 1st iteration
 
 //////////////////////////////////////MAIN//////////////////////////////////////
 void setup(){ 
@@ -39,14 +38,9 @@ void loop(){
   Serial.print(bmp.readPressure()); //print pressure in Pa
   Serial.println(" Pa");            //print unit
 
-  current_altitude = bmp.readAltitude(sealevel_hPa);  //assign current altitude
-  if(is_1st_loop){                    //if the 1st loop
-    base_altitude = current_altitude; //assign the base altitude
-    is_1st_loop = false;              //now it's no longer the 1st loop
-  }
-  Serial.print(F("Approx altitude = "));         //print message
-  Serial.print(current_altitude-base_altitude);  //print alt from start in m
-  Serial.println(" m");                          //print unit
+  Serial.print(F("Approx altitude = "));                       //print message
+  Serial.print(bmp.readAltitude(sealevel_hPa)-base_altitude);  //print alt
+  Serial.println(" m");                                        //print unit
   
   Serial.println(); //print newline
   delay(500);       //wait to retreive new data
@@ -54,11 +48,11 @@ void loop(){
 
 ///////////////////////////////////functions!///////////////////////////////////
 /*******************************************************************************
- *        Name: BMP_setup
- * Description: Sets up necessary parameters for BMP280.
- *       Input: VOID
- *  Out/Modify: VOID, modifies base_altitude, gives it a value
- *******************************************************************************/
+*        Name: BMP_setup
+* Description: Sets up necessary parameters for BMP280.
+*       Input: VOID
+*  Out/Modify: VOID, modifies base_altitude, gives it a value
+*******************************************************************************/
 void
 BMP_setup(){
   BMP_status(); //check connection of BMP280
@@ -79,12 +73,12 @@ BMP_setup(){
 }
 
 /*******************************************************************************
- *        Name: BMP_status
- * Description: Ensures BMP280 is connected. Attempts to connect 3 times before
- *              calling it quits. Prints messages updating the status of test.
- *       Input: VOID
- *  Out/Modify: VOID, modifies "BMP_CONNECTED", =TRUE if connected, FALSE if not
- *******************************************************************************/
+*        Name: BMP_status
+* Description: Ensures BMP280 is connected. Attempts to connect 3 times before
+*              calling it quits. Prints messages updating the status of test.
+*       Input: VOID
+*  Out/Modify: VOID, modifies "BMP_CONNECTED", =TRUE if connected, FALSE if not
+*******************************************************************************/
 void
 BMP_status(void){
   Serial.println("Checking status of BMP280.");
@@ -106,10 +100,10 @@ BMP_status(void){
   Serial.println(); //print newline
 }
 
- /*******************************************************************************
- *        Name: 
- * Description: 
- *       Input: 
- *  Out/Modify: 
- *******************************************************************************/
+/*******************************************************************************
+*        Name: 
+* Description: 
+*       Input: 
+*  Out/Modify: 
+*******************************************************************************/
 //////////////////////////////////ISP_Avionics//////////////////////////////////
