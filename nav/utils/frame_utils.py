@@ -7,7 +7,7 @@ Functions to convert between several different types of frames.
 '''
 
 from numpy import array, cos, sin, tan, arctan, arctan2, deg2rad, rad2deg, sqrt, pi
-from nav.utils.constants import flattening, radius_equatorial
+from nav.utils.constants import flattening, radius_equatorial, acceptable_error
 
 
 def lla_to_ecef(lla_array):
@@ -67,7 +67,8 @@ def ecef_to_lla(ecef_array):
     lat_num = z + e_squared*(1-flattening)/(1-e_squared)*radius_equatorial*(sin(Beta))**3
     lat_den = s - e_squared*radius_equatorial*(cos(Beta))**3
     lat = arctan2(lat_num, lat_den)
-    converged = True if abs(lat) == pi else False
+    
+    converged = True if (abs(lat) - pi <= acceptable_error) else False
     while not converged:
         Beta = arctan(((1-flattening)*sin(lat))/cos(lat))
         lat_num = z + e_squared*(1-flattening)/(1-e_squared)*radius_equatorial*(sin(Beta))**3
