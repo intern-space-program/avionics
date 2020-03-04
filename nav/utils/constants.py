@@ -21,3 +21,4 @@ radius_equatorial = 6378137  # (m) equatorial radius
 # Conventions
 PASS = 0
 FAIL = 1
+acceptable_error = 0.0001  # used in testing and iterative convergence
