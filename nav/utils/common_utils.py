@@ -49,7 +49,9 @@ def unit_test(module_name, tests):
 
     print(module_name, 'unit test results: ', end='')
     print('{} out of {} tests passed.'.format(passed, len(tests)))
-    if len(fail_messages) > 0:
-        print('Failed tests:')
+    if failed > 0:
+        print('{} failed tests:'.format(failed))
         for msg in fail_messages:
             print('\t' + msg)
+    
+    return failed
