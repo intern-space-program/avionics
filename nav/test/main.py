@@ -15,6 +15,10 @@ import nav.test.frame_utils_test as frame_utils_test
 import nav.test.quaternion_utils_test as quaternion_utils_test
 
 
+class TestingError(Exception):
+    pass
+
+
 def main():
     '''
     The user needs to modify this function to include all modules
@@ -43,6 +47,8 @@ def main():
     if failed == 0:
         print('Whoever wrote this is a genius.')
 
+    else:
+        raise TestingError('Changes from master have broken nav.')
     return failed
 
 

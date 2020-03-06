@@ -2,3 +2,4 @@ __pycache__/*
 .idea
 nav/design_diagram.key
 .DS_Store
+*.pyc
