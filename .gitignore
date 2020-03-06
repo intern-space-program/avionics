@@ -3,3 +3,4 @@ __pycache__/*
 nav/design_diagram.key
 .DS_Store
 *.pyc
+nav/test/__pycache__/NavMain_test.cpython-37.pyc
