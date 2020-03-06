@@ -166,7 +166,9 @@ def main():
         merge_attitude_test
     ]
 
-    unit_test(module_name, tests)
+    num_tests = len(tests)
+    failed = unit_test(module_name, tests)
+    return failed, num_tests
 
 
 if __name__ == '__main__':
