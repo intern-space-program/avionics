@@ -231,7 +231,6 @@ def main():
 
     num_tests = len(tests)
     failed = unit_test(module_name, tests)
-    failed = 1
     return failed, num_tests
 
 
