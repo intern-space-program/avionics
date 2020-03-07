@@ -81,7 +81,8 @@ def nav_speed_test():
     desc = 'nav_speed_test - Ensure that NavMain.main runs in less than {} seconds'.format(max_time)
 
     # read raw data from input file
-    data = pd.read_csv('sim_data.csv')
+    path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'sim_data.csv')
+    data = pd.read_csv(path)
 
     # UNIT UNDER TEST
     elapsed_times = zeros(len(data['t'])-1)
