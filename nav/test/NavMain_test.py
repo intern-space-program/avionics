@@ -16,6 +16,7 @@ from nav.utils.constants import PASS, FAIL, G_E
 import nav.NavMain
 import pandas as pd
 import timeit
+import os
 
 
 def main_test_translational():
@@ -23,7 +24,8 @@ def main_test_translational():
     desc = 'main_test - Test NavMain.main translational functionality with high-fidelity inputs'
 
     # read raw data from input file
-    data = pd.read_csv('sim_data.csv')
+    path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'sim_data.csv')
+    data = pd.read_csv(path)
 
     # EXPECTED RESULT
     exp = {
