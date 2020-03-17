@@ -34,14 +34,18 @@ def qnorm(q):
 
 
 def qvectransform(q, v):
-    ''' Transform a vector's frame. '''
+    '''
+    Transform a vector's frame.
+    This is distinct from rotating a vector within a frame!
+    See the paper by Robert Zanetti cited in the docstring.
+    '''
     qvec = concatenate([array([0]), v])
-    transformed = qcomp(qcomp(qconjugate(q), qvec), q)
+    transformed = qcomp(qconjugate(q), qcomp(qvec, q))
     return transformed[1:]
 
 
 def qconjugate(q):
     ''' Get the conjugate of a quaternion. This is equal to
     the inverse for unit quaternions. '''
-    q[1:] = -q[1:]
-    return q
+    qconj = concatenate([array([q[0]]), -q[1:]])
+    return qconj
