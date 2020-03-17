@@ -36,7 +36,7 @@ def qnorm(q):
 def qvectransform(q, v):
     ''' Transform a vector's frame. '''
     qvec = concatenate([array([0]), v])
-    transformed = qcomp(q, qcomp(qvec, qconjugate(q)))
+    transformed = qcomp(qcomp(qconjugate(q), qvec), q)
     return transformed[1:]
 
 
