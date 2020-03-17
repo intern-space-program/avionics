@@ -28,7 +28,9 @@ def qcomp(q1, q2):
 
 def qnorm(q):
     ''' Normalize a quaternion. '''
-    return q/norm(q) if norm(q) != 0.0 else zeros(4)
+    if norm(q) != 0.0:
+        return q/norm(q)
+    return zeros(4)
 
 
 def qvectransform(q, v):
