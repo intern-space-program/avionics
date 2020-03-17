@@ -57,7 +57,6 @@ def qcomp_test_values2():
 
     # unit test
     ret = qcomp(q1, q2)
-    print(ret)
 
     # results
     return (PASS, description) if allclose(ret, exp, atol=0.001) \
@@ -167,11 +166,11 @@ def qvectransform_test_values1():
 def qvectransform_test_values2():
     # setup
     description = 'qvectransform_test_values2 - Test qvectransform with transform quaternion'
-    q = array([0.70710678, 0.0, 0.70710678, 0.0])  # rotate about y-axis by pi/2 rad
+    q = array([0.7071068, 0.0, 0.0, 0.7071068])  # rotate frame about z-axis by pi/2 rad
     v = array([1.0, 0.0, 0.0])
 
     # expected results
-    exp = array([0.0, 0.0, 1.0])
+    exp = array([0.0, -1.0, 0.0])
 
     # unit test
     ret = qvectransform(q, v)
