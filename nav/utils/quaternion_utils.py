@@ -22,7 +22,7 @@ def qcomp(q1, q2):
     ''' Compose two quaternions. '''
     q = zeros(4)
     q[0] = q1[0]*q2[0] - dot(q2[1:], q1[1:])
-    q[1:] = q1[0]*q2[1:] + q2[0]*q1[1:] + cross(q2[1:], q1[1:])
+    q[1:] = q1[0]*q2[1:] + q2[0]*q1[1:] + cross(q1[1:], q2[1:])
     return q
 
 
