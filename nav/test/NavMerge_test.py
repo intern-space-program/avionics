@@ -130,12 +130,12 @@ def merge_velocity_test_values():
 def merge_attitude_test():
     # setup
     description = 'merge_attitude_test - Test merge_attitude function with an input (F2019 version just returns the input)'
-    prev_attitude = array([0.5, 0.5, 0.5, 0.5])
-    current_attitude = array([1.0, 0.0, 0.0, 0.0])
-    delta_theta = array([1.0, 1.0, 1.0])
+    prev_attitude = array([1.0, 0.0, 0.0, 0.0])
+    current_attitude = array([0.9999619, 0, 0, 0.0087265])
+    delta_theta = array([0, 0, 0.0174533])  # 1 degree rotation about z-axis
 
     # expected results
-    exp = array([1.0, 0.0, 0.0, 0.0])
+    exp = array([0.9999619, 0, 0, 0.0087265])
 
     # unit test
     ret = merge_attitude(prev_attitude, current_attitude, delta_theta)
