@@ -29,9 +29,9 @@ def qcomp_test_null():
         else (FAIL, description)
 
 
-def qcomp_test_values():
+def qcomp_test_values1():
     # setup
-    description = 'qcomp_test_values - Test qcomp with non-zero inputs'
+    description = 'qcomp_test_values1 - Test qcomp with non-zero inputs'
     q1 = array([1.0, 0.0, 0.0, 0.0])
     q2 = array([0.5, 0.5, 0.5, 0.5])
 
@@ -40,6 +40,24 @@ def qcomp_test_values():
 
     # unit test
     ret = qcomp(q1, q2)
+
+    # results
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
+
+
+def qcomp_test_values2():
+    # setup
+    description = 'qcomp_test_values2 - Test qcomp with non-zero inputs'
+    q1 = array([0.47726095, 0.37225971, 0.79559781, 0.02586157])
+    q2 = array([0.44232398, 0.62204704, 0.59539969, 0.25081106])
+
+    # expected results
+    exp = array([-0.50064, 0.64568, 0.55879, -0.14211])
+
+    # unit test
+    ret = qcomp(q1, q2)
+    print(ret)
 
     # results
     return (PASS, description) if allclose(ret, exp, atol=0.001) \
@@ -218,7 +236,8 @@ def main():
         qnorm_test_null,
         qnorm_test_values,
         qcomp_test_null,
-        qcomp_test_values,
+        qcomp_test_values1,
+        qcomp_test_values2,
         qvectransform_test_null1,
         qvectransform_test_null2,
         qvectransform_test_null3,
