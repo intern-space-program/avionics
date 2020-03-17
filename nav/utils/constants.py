@@ -16,7 +16,7 @@ ACC_GRAV = 9.81  # (m/s**2) gravitational acceleration near Earth's surface
 
 flattening_reciprocal = 298.257223563   # (--) WGS 84 Earth Reciprocal of Flattening
 flattening = 1 / flattening_reciprocal  # (--) WGS 84 Earth Flattening Parameter
-radius_equatorial = 6378137  # (m) equatorial radius
+radius_equatorial = 6378137  # (m) Earth equatorial radius
 
 # Conventions
 PASS = 0
