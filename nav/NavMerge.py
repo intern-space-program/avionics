@@ -126,8 +126,10 @@ def merge_main(prev_state, new_measurements):
 
     ### PROPAGATION ###
 
-    accel_merged = merge_accel(prev_position, accel_nc, accel_c, qconjugate(q_inert_to_body))  # merge the acceleration measurements
+    # merge the acceleration measurements
+    accel_merged = merge_accel(prev_position, accel_nc, accel_c, qconjugate(q_inert_to_body))
 
+    # merge the outputs
     merged_vals = {
         'time': prev_time + dt,
         'position': merge_position(prev_position, prev_velocity, dt, accel_merged, gps, altitude),
