@@ -29,13 +29,13 @@ def merge_accel(prev_position, accel_nc, accel_c, q_body_to_inert):
 
     # merge acceleration measurements
     p_prev_norm = norm(prev_position)
-    if p_prev_norm != 0:  # safing against division by zero
+    if p_prev_norm != 0:
         accel_gravity = G_E*prev_position/(p_prev_norm**3)
-        accel_nc_calculated = accel_c + accel_gravity
-        return 0.5*(accel_nc + accel_nc_calculated)
+        accel_c_calculated = accel_nc - accel_gravity
+        return 0.5*(accel_c + accel_c_calculated)
     else:
-        # need to give some data back
-        return accel_nc
+        # need to give some data back, even if it's a zero vector
+        return accel_c
 
 
 def merge_position(prev_position, prev_velocity, dt, accel_merged, gps, altitude):
