@@ -19,30 +19,51 @@ def merge_accel_test_null():
     prev_position = array([0.0, 0.0, 0.0])
     accel_nc = array([0.0, 0.0, 0.0])
     accel_c = array([0.0, 0.0, 0.0])
+    q_body_to_inert = array([1.0, 0.0, 0.0, 0.0])
 
     # expected results
     exp = array([0.0, 0.0, 0.0])
 
     # unit test
-    ret = merge_accel(prev_position, accel_nc, accel_c)
+    ret = merge_accel(prev_position, accel_nc, accel_c, q_body_to_inert)
 
     # results
     return (PASS, description) if allclose(ret, exp, atol=0.001) \
         else (FAIL, description)
 
 
-def merge_accel_test_values():
+def merge_accel_test_values_1():
     # setup
-    description = 'merge_accel_test_values - Test merge_accel with non-zero inputs'
+    description = 'merge_accel_test_values_1 - Test merge_accel with non-zero inputs, no relative rotation'
     prev_position = array([0.0, 0.0, 6371000.0])
     accel_nc = array([1.0, 1.0, 0.0])
     accel_c = array([1.0, 1.0, -G_E/6371000**2])
+    q_body_to_inert = array([1.0, 0.0, 0.0, 0.0])
 
     # expected results
     exp = array([1.0, 1.0, 0.0])
 
     # unit test
-    ret = merge_accel(prev_position, accel_nc, accel_c)
+    ret = merge_accel(prev_position, accel_nc, accel_c, q_body_to_inert)
+
+    # results
+    return (PASS, description) if allclose(ret, exp, atol=0.001) \
+        else (FAIL, description)
+
+
+def merge_accel_test_values_2():
+    # setup
+    description = 'merge_accel_test_values_1 - Test merge_accel with non-zero inputs, with relative rotation'
+    prev_position = array([0.0, 0.0, 6371000.0])
+    accel_nc = array([0.7071055, 1.00000005, 0.70710813])
+    accel_c = array([7.65065966, 1.00000005, -6.23642023])
+    q_body_to_inert = array([0.9238792, 0.0, -0.3826843, 0.0])  # 45 degree rotation of body frame about inertial y axis
+
+    # expected results
+    exp = array([1.0, 1.0, 0.0])
+
+    # unit test
+    ret = merge_accel(prev_position, accel_nc, accel_c, q_body_to_inert)
 
     # results
     return (PASS, description) if allclose(ret, exp, atol=0.001) \
@@ -158,7 +179,8 @@ def main():
     
     tests = [
         merge_accel_test_null,
-        merge_accel_test_values,
+        merge_accel_test_values_1,
+        merge_accel_test_values_2,
         merge_position_test_null,
         merge_position_test_values,
         merge_velocity_test_null,
