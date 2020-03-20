@@ -13,7 +13,7 @@ from nav.utils.constants import *
 from nav.utils.common_utils import weighted_avg
 
 
-def merge_accel(prev_position, accel_nc, accel_c):
+def merge_accel(prev_position, accel_nc, accel_c, q_body_to_inert):
     '''
     Merges the IMU's conservative acceleration measurement (measures gravity)
     with a calculated conservative acceleration based on the IMU's
@@ -23,6 +23,11 @@ def merge_accel(prev_position, accel_nc, accel_c):
     For parameter descriptions, see merge_main function.
     '''
 
+    # transform IMU measurements into inertial frame
+    accel_nc = qvectransform(q_body_to_inert, accel_nc)
+    accel_c = qvectransform(q_body_to_inert, accel_c)
+
+    # merge acceleration measurements
     p_prev_norm = norm(prev_position)
     if p_prev_norm != 0:  # safing against division by zero
         accel_gravity = G_E*prev_position/(p_prev_norm**3)
@@ -121,7 +126,7 @@ def merge_main(prev_state, new_measurements):
 
     ### PROPAGATION ###
 
-    accel_merged = merge_accel(prev_position, accel_nc, accel_c)  # merge the acceleration measurements
+    accel_merged = merge_accel(prev_position, accel_nc, accel_c, qconjugate(q_inert_to_body))  # merge the acceleration measurements
 
     merged_vals = {
         'time': prev_time + dt,
