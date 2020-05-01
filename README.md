@@ -1,48 +1,37 @@
 # Avionics
-## Purpose of This Repo
-Intern Space Program began in 2018, but the Avionics group has struggled consistently due to:
-* Poor hardware/software documentation
-* Primary goals left incomplete and/or problems unsolved
-* Inconsistent handover of work to future tours
 
-This repo is an effort to resolve those issues. Why rebuild from scratch when previous tours have done some of the dirty work? Make use of what's been done and develop new features that you'd like to see. Please see the [CONTRIBUTING guide](https://github.com/intern-space-program/avionics/blob/master/CONTRIBUTING.md) for more information.
+## What's This?
+Avionics is the neural system of the vehicle. On a real rocket, the avionics control the vehicle during flight, and handle all communication with the ground systems. In the Intern Space Program, the avionics software does things like estimate the vehicle's position throughout the flight, stream a live video feed from the rocket, and controls the detonation charge for the parachutes.
 
-## Project Overview and Goals
-The intention of this project was to create hardware and software to enable *real-time* streaming of telemetry and video data from within a medium sized rocket. The system was built and developed from the ground up. 
-There were two main goals for the system:
-1. Live Stream Video and Inertial Data to the World
-2. Employ navigation and sensor fusion techniques to localize the payload (and hence rocket) in real time
+## How to Contribute to Avionics
+Current projects can be found under the Projects tab. In each project, you can find descriptive notes and related issues. All issues can be found in the Issues tab. You should look for ones tagged "Good First Issue" if you're new to programming/git, or ones related to your team's capability. When you think you've solved an issue or a few related ones, make a Pull Request and ask the avionics leads for a review. They'll give you changes to make or merge your Pull Request into the master branch.
 
-This project has pushed the bounds in both live streaming video and telemetry data over LTE Cat M-1 and functionality given the limited amount of space in the nosecone. The hope is that future teams will be able to build off of this platform and further the success of the intern space program as a whole.
+If you're new to git, and you're having trouble figuring out how to get started, feel free to ask the avionics lead for instructions.
 
-## Setup
-1. Install `python>=3.7`.
-2. From your command line, run `pip install -r requirements.txt` from the repo's directory.
+## Design Philosophy
+As with all projects, avionics began with a pile of rag-tag code that barely functioned. That kind of code is really difficult for new people to understand and use, and even more difficult to build on.
 
-## System Diagrams
-### Full System Architecture
+The design philosophy is simple: keep things bite-sized. Try to avoid thousand-line scripts. Keep things modular, split across functions and scripts, and well-documented.
 
-![full system](img/system_diagram.png)
+## Development Process
+  1. Generally describe a new thing you want avionics to do.
+  2. Specifically describe what **kind** of data (not specific datatype) you want the new system to receive, and what it'll output.
+  3. Look at the existing modules. What kind of data do they output? Can you design your system to use the existing datatypes they output? If so, do so.
+  4. Try to design your system so that it can be used in just a few lines of code in the master script. (I.e. we don't want to call every function in your system in the master script. Have a main function in your system that does all that, and we'll call just that function from the master script.)
+  5. Work with the avionics lead to decide how the main avionics control script will call on your system.
+  6. Create issues for your system on git. Make as many as you want. Tag them appropriately, and assign yourself to them.
+  7. Write integration tests first. Yes, that's right: don't write the system code yet. If you can write tests for your system, then you definitely know what you want it to get and give back.
+  8. Program your system. Try to chunk it up into as many small functions as possible, maybe across multiple scripts if necessary. The goal is to make the code as readable as possible in bite-sized chunks. For every function you write, write a unit test or two so you can validate that it works correctly and won't crash (e.g. does it have a division-by-zero checker?).
+  9. Create a Pull Request for your system and request that the avionics lead review it.
 
-### Payload Architecture
+## Capabilities
+- **Sensor Suite**: Parse data produced by sensors.
+- **Camera**: Record live video of the flight.
+- **Navigation**: Estimate the vehicle's current position, velocity, and attitude.
+- **Telemetry Streaming**: Communication between the vehicle and the ground station.
+- **Ground Station**: Display the flight telemetry and video feed in a nice-looking way.
 
-![payload](img/payload_diagram.jpg)
-
-### Server Architecture
-
-![payload](img/server_diagram.jpg)
-
-## Component Descriptions
-- **Teensy**:The Teensy folder contains the Arduino file that allows the co-processor to go through the initiation and calibration procedure and to  sample data from the sensor suite, serializing this data via a JSON packet to be sent to the Pi for distribution.
-- **Raspi**: The raspi folder is dedicated to developing the tools necessary to operate the on-board raspberry pi zero, which is responsible for: 
-  1. reading/compressing video data
-  2. reading in raw telemetry from the teensy
-  3. storing video and telemetry data
-  4. sending video and telemetry data over the LTE network to the ground server
-- **Nav**: The navigation capability keeps us updated on where the vehicle is, its velocity, and its attitude. It incorporates data from all the sensors on board to come up with an estimated state, then does some light filtering to smooth out the data before it gets transmitted to the ground.
-- **Ground_station**: The ground_station folder contains scripts to operate the ground server and client, and also scripts to create and display the telemetry display GUI
-- **Simulation**: the simulation folder contains scripts to generate random, but realistic trajectories and generate varying degress of sensor data from the trajectories to test and flesh out the navigation algorithms. 
-- **Packetizer**: the packetizer folder contains a C-style implementation of payloading and de-payloading the raw telemetry data in a highly efficient structure and byte format. 
+See each capability's README file for more specific information.
 
 ## Hardware List Fall 2019
 - [Raspberry Pi 3 Model B](https://www.adafruit.com/product/3775?src=raspberrypi)
@@ -51,10 +40,3 @@ This project has pushed the bounds in both live streaming video and telemetry da
 - [Adafruit GPS Sensor](https://www.adafruit.com/product/746)
 - [Adafruit Temp/Press Altitude Sensor](https://www.adafruit.com/product/2651)
 - [Adafruit IMU](https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/overview)
-
-## Payload Setup and Dependencies
-### Install Hologram Nova API
-## Ground Station Setup and Dependencies
-### Video Streaming and Display
-### GUI Display
-### Screen Streaming to the World
