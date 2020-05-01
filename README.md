@@ -23,6 +23,7 @@ The design philosophy is simple: keep things bite-sized. Try to avoid thousand-l
   7. Write integration tests first. Yes, that's right: don't write the system code yet. If you can write tests for your system, then you definitely know what you want it to get and give back.
   8. Program your system. Try to chunk it up into as many small functions as possible, maybe across multiple scripts if necessary. The goal is to make the code as readable as possible in bite-sized chunks. For every function you write, write a unit test or two so you can validate that it works correctly and won't crash (e.g. does it have a division-by-zero checker?).
   9. Create a Pull Request for your system and request that the avionics lead review it.
+  10. Every flight, create a "release" of the flight version of the repo. This enables future teams to redesign anything they'd like without losing older functional versions of the code.
 
 ## Capabilities
 - **Sensor Suite**: Parse data produced by sensors.
