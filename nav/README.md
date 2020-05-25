@@ -1,4 +1,4 @@
-# Navigation
+# Navigon
 
 ## Description
 Navigation ("Nav") takes in sensor measurements and the last known state of the rocket and estimates the vehicle's current position, velocity, and attitude. **Units are SI.**
